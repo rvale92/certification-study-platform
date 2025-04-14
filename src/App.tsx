@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Layout from './components/Layout';
@@ -27,22 +27,27 @@ const theme = createTheme({
   },
 });
 
+// Custom hook to handle GitHub Pages URL structure
+const useGitHubPagesUrl = () => {
+  const location = useLocation();
+  const pathname = location.pathname.replace(/^\/certification-study-platform/, '');
+  return pathname || '/';
+};
+
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router basename="/certification-study-platform">
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/practice-exams" element={<PracticeExams />} />
-            <Route path="/practice-exams/:certId" element={<PracticeExams />} />
-            <Route path="/exam/:examId" element={<Exam />} />
-            <Route path="/flashcards" element={<Flashcards />} />
-            <Route path="/study-topics" element={<StudyTopics />} />
-            <Route path="/exam-review/:examId" element={<ExamReview />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          <Route path="/" element={<Layout><Home /></Layout>} />
+          <Route path="/practice-exams" element={<Layout><PracticeExams /></Layout>} />
+          <Route path="/practice-exams/:certId" element={<Layout><PracticeExams /></Layout>} />
+          <Route path="/exam/:examId" element={<Layout><Exam /></Layout>} />
+          <Route path="/flashcards" element={<Layout><Flashcards /></Layout>} />
+          <Route path="/study-topics" element={<Layout><StudyTopics /></Layout>} />
+          <Route path="/exam-review/:examId" element={<Layout><ExamReview /></Layout>} />
+        </Routes>
       </Router>
     </ThemeProvider>
   );
