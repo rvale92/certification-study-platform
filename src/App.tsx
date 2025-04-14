@@ -31,11 +31,12 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
+      <Router basename="/certification-study-platform">
         <Layout>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/practice-exams" element={<PracticeExams />} />
+            <Route path="/practice-exams/:certId" element={<PracticeExams />} />
             <Route path="/exam/:examId" element={<Exam />} />
             <Route path="/flashcards" element={<Flashcards />} />
             <Route path="/study-topics" element={<StudyTopics />} />

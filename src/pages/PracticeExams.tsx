@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -13,7 +13,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const exams = [
   {
@@ -56,8 +56,22 @@ const exams = [
 
 const PracticeExams: React.FC = () => {
   const navigate = useNavigate();
+  const { certId } = useParams<{ certId?: string }>();
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
   const [showStartDialog, setShowStartDialog] = useState(false);
+  const [filteredExams, setFilteredExams] = useState(exams);
+
+  useEffect(() => {
+    if (certId) {
+      const filtered = exams.filter(exam => 
+        exam.id === certId || 
+        exam.name.toLowerCase().replace(/\s+/g, '-') === certId
+      );
+      setFilteredExams(filtered);
+    } else {
+      setFilteredExams(exams);
+    }
+  }, [certId]);
 
   const handleStartExam = (examId: string) => {
     setSelectedExam(examId);
@@ -82,7 +96,7 @@ const PracticeExams: React.FC = () => {
       </Box>
 
       <Grid container spacing={4}>
-        {exams.map((exam) => (
+        {filteredExams.map((exam) => (
           <Grid item xs={12} sm={6} md={3} key={exam.id}>
             <Card
               sx={{

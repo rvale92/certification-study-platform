@@ -83,7 +83,7 @@ const Home: React.FC = () => {
                 <Button
                   variant="contained"
                   fullWidth
-                  onClick={() => navigate(`/practice-exams/${cert.name.replace(/\s+/g, '-').toLowerCase()}`)}
+                  onClick={() => navigate(`/practice-exams/${cert.name.toLowerCase().replace(/\s+/g, '-')}`)}
                 >
                   Start Studying
                 </Button>
