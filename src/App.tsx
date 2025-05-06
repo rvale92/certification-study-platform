@@ -32,6 +32,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -52,7 +53,7 @@ import ExamReview from './pages/ExamReview';
 const drawerWidth = 240;
 
 // Theme configuration
-const theme = createTheme({
+export const theme = createTheme({
   palette: {
     primary: {
       main: '#2563eb', // Modern blue
@@ -845,7 +846,40 @@ const Home: React.FC = () => {
                 <Button
                   variant="contained"
                   fullWidth
-                  onClick={() => navigate(`/practice-exams/${cert.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                  onClick={async () => {
+                    try {
+                      // Open the window first (this should work as it's directly triggered by the click)
+                      const newWindow = window.open('about:blank', '_blank');
+                      if (!newWindow) {
+                        alert('Please allow popups for this site to access the study materials.');
+                        return;
+                      }
+
+                      const apiKey = 'AIzaSyAhpDiYKRwN2vXFc-CwbbpjY2qMzfoygMw';
+                      const searchQuery = `${cert.name} certification tutorial`;
+                      const apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${encodeURIComponent(searchQuery)}&key=${apiKey}&type=video`;
+                      
+                      newWindow.document.write('Loading study materials...');
+                      
+                      const response = await fetch(apiUrl);
+                      const data = await response.json();
+                      
+                      if (data.items && data.items.length > 0) {
+                        const videoId = data.items[0].id.videoId;
+                        newWindow.location.href = `https://www.youtube.com/watch?v=${videoId}`;
+                      } else {
+                        newWindow.location.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
+                      }
+                    } catch (error) {
+                      console.error('Error fetching YouTube data:', error);
+                      // Open a new window with the search results as fallback
+                      const searchQuery = `${cert.name} certification tutorial`;
+                      const fallbackWindow = window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`, '_blank');
+                      if (!fallbackWindow) {
+                        alert('Please allow popups for this site to access the study materials.');
+                      }
+                    }
+                  }}
                   sx={{
                     bgcolor: cert.color,
                     '&:hover': {
