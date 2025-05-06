@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useParams, Link as RouterLink } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useParams, Link as RouterLink, Navigate } from 'react-router-dom';
 import {
   AppBar,
   Box,
@@ -1998,7 +1998,7 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Router>
+      <Router basename="/certification-study-platform">
         <Box sx={{ display: 'flex' }}>
           <CssBaseline />
           <AppBar
@@ -2070,6 +2070,7 @@ function App() {
               <Route path="/flashcards" element={<Flashcards />} />
               <Route path="/study-topics" element={<StudyTopics />} />
               <Route path="/exam-review/:examId" element={<ExamReview />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Box>
         </Box>
