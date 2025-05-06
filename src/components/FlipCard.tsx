@@ -26,7 +26,7 @@ const FlipCard: React.FC<FlipCardProps> = ({ front, back }) => {
           height: '100%',
           transformStyle: 'preserve-3d',
           transition: 'transform 0.6s',
-          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0)',
+          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
         }}
       >
         <Card
@@ -35,9 +35,12 @@ const FlipCard: React.FC<FlipCardProps> = ({ front, back }) => {
             width: '100%',
             height: '100%',
             backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            backgroundColor: '#ffffff',
+            boxShadow: 3,
           }}
         >
           <CardContent>
@@ -52,11 +55,13 @@ const FlipCard: React.FC<FlipCardProps> = ({ front, back }) => {
             width: '100%',
             height: '100%',
             backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             transform: 'rotateY(180deg)',
             backgroundColor: '#f5f5f5',
+            boxShadow: 3,
           }}
         >
           <CardContent>
