@@ -78,8 +78,8 @@ const Flashcards: React.FC = () => {
           <Box sx={{ mb: 4 }}>
             {currentQuestions.length > 0 && (
               <FlipCard
-                front={currentQuestions[currentIndex].correctAnswer}
-                back={currentQuestions[currentIndex].question}
+                front={currentQuestions[currentIndex].question}
+                back={currentQuestions[currentIndex].correctAnswer}
               />
             )}
           </Box>
