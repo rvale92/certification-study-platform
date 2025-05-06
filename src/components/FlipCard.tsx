@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, Typography, Box, Button } from '@mui/material';
+import { Card, CardContent, Typography, Box, Button, Chip } from '@mui/material';
 
 interface FlipCardProps {
   front: string;
@@ -12,7 +12,7 @@ const FlipCard: React.FC<FlipCardProps> = ({ front, back }) => {
   return (
     <Box sx={{ width: '100%', height: '300px' }}>
       {!showingAnswer ? (
-        // Question Card (Front)
+        // Question Side
         <Card 
           sx={{ 
             height: '100%', 
@@ -21,9 +21,21 @@ const FlipCard: React.FC<FlipCardProps> = ({ front, back }) => {
             justifyContent: 'space-between',
             backgroundColor: '#ffffff',
             boxShadow: 3,
+            position: 'relative',
+            p: 2
           }}
         >
-          <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <Chip 
+            label="QUESTION" 
+            color="primary" 
+            sx={{ 
+              position: 'absolute', 
+              top: 10, 
+              left: 10,
+              fontWeight: 'bold'
+            }} 
+          />
+          <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', pt: 4 }}>
             <Typography variant="h5" component="div" align="center">
               {front}
             </Typography>
@@ -31,15 +43,17 @@ const FlipCard: React.FC<FlipCardProps> = ({ front, back }) => {
           <Box sx={{ p: 2, textAlign: 'center' }}>
             <Button 
               variant="contained" 
-              color="primary" 
+              color="success" 
               onClick={() => setShowingAnswer(true)}
+              size="large"
+              sx={{ minWidth: '200px' }}
             >
               Show Answer
             </Button>
           </Box>
         </Card>
       ) : (
-        // Answer Card (Back)
+        // Answer Side
         <Card 
           sx={{ 
             height: '100%', 
@@ -48,9 +62,21 @@ const FlipCard: React.FC<FlipCardProps> = ({ front, back }) => {
             justifyContent: 'space-between',
             backgroundColor: '#f5f5f5',
             boxShadow: 3,
+            position: 'relative',
+            p: 2
           }}
         >
-          <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <Chip 
+            label="ANSWER" 
+            color="success" 
+            sx={{ 
+              position: 'absolute', 
+              top: 10, 
+              left: 10,
+              fontWeight: 'bold'
+            }} 
+          />
+          <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', pt: 4 }}>
             <Typography variant="h5" component="div" align="center">
               {back}
             </Typography>
@@ -58,10 +84,12 @@ const FlipCard: React.FC<FlipCardProps> = ({ front, back }) => {
           <Box sx={{ p: 2, textAlign: 'center' }}>
             <Button 
               variant="contained" 
-              color="secondary" 
+              color="primary" 
               onClick={() => setShowingAnswer(false)}
+              size="large"
+              sx={{ minWidth: '200px' }}
             >
-              Show Question
+              Back to Question
             </Button>
           </Box>
         </Card>
