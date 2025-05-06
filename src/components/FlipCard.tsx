@@ -12,65 +12,64 @@ const FlipCard: React.FC<FlipCardProps> = ({ front, back }) => {
   return (
     <Box
       sx={{
-        perspective: '1000px',
         width: '100%',
         height: '300px',
         cursor: 'pointer',
+        position: 'relative',
       }}
       onClick={() => setIsFlipped(!isFlipped)}
     >
-      <Box
+      {/* Front Card */}
+      <Card
         sx={{
-          position: 'relative',
+          position: 'absolute',
           width: '100%',
           height: '100%',
-          transformStyle: 'preserve-3d',
-          transition: 'transform 0.6s',
-          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#ffffff',
+          boxShadow: 3,
+          transition: 'opacity 0.3s ease',
+          opacity: isFlipped ? 0 : 1,
+          visibility: isFlipped ? 'hidden' : 'visible',
         }}
       >
-        <Card
-          sx={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#ffffff',
-            boxShadow: 3,
-          }}
-        >
-          <CardContent>
-            <Typography variant="h5" component="div" align="center">
-              {front}
-            </Typography>
-          </CardContent>
-        </Card>
-        <Card
-          sx={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transform: 'rotateY(180deg)',
-            backgroundColor: '#f5f5f5',
-            boxShadow: 3,
-          }}
-        >
-          <CardContent>
-            <Typography variant="h5" component="div" align="center">
-              {back}
-            </Typography>
-          </CardContent>
-        </Card>
-      </Box>
+        <CardContent>
+          <Typography variant="h5" component="div" align="center">
+            {front}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
+            Click to reveal answer
+          </Typography>
+        </CardContent>
+      </Card>
+
+      {/* Back Card */}
+      <Card
+        sx={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#f5f5f5',
+          boxShadow: 3,
+          transition: 'opacity 0.3s ease',
+          opacity: isFlipped ? 1 : 0,
+          visibility: isFlipped ? 'visible' : 'hidden',
+        }}
+      >
+        <CardContent>
+          <Typography variant="h5" component="div" align="center">
+            {back}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
+            Click to show question
+          </Typography>
+        </CardContent>
+      </Card>
     </Box>
   );
 };
