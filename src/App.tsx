@@ -32,7 +32,6 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  useMediaQuery,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
