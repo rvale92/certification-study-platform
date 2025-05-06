@@ -40,7 +40,7 @@ const FlipCard: React.FC<FlipCardProps> = ({ front, back }) => {
             {front}
           </Typography>
           <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
-            Click to reveal answer
+            Click to see the question
           </Typography>
         </CardContent>
       </Card>
@@ -66,7 +66,7 @@ const FlipCard: React.FC<FlipCardProps> = ({ front, back }) => {
             {back}
           </Typography>
           <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
-            Click to show question
+            Click to see the answer
           </Typography>
         </CardContent>
       </Card>
