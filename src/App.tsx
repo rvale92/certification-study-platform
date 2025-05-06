@@ -1743,10 +1743,10 @@ const Flashcards: React.FC = () => {
             >
               <CardContent sx={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
                 <Typography variant="h5" component="div" gutterBottom>
-                  {isFlipped ? filteredCards[currentCard].answer : filteredCards[currentCard].question}
+                  {isFlipped ? filteredCards[currentCard].question : filteredCards[currentCard].answer}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {isFlipped ? 'Question' : 'Answer'}
+                  {isFlipped ? 'Answer' : 'Question'}
                 </Typography>
               </CardContent>
             </Card>
