@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, Typography, Box } from '@mui/material';
+import { Card, CardContent, Typography, Box, Button } from '@mui/material';
 
 interface FlipCardProps {
   front: string;
@@ -7,69 +7,65 @@ interface FlipCardProps {
 }
 
 const FlipCard: React.FC<FlipCardProps> = ({ front, back }) => {
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [showingAnswer, setShowingAnswer] = useState(false);
 
   return (
-    <Box
-      sx={{
-        width: '100%',
-        height: '300px',
-        cursor: 'pointer',
-        position: 'relative',
-      }}
-      onClick={() => setIsFlipped(!isFlipped)}
-    >
-      {/* Front Card */}
-      <Card
-        sx={{
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#ffffff',
-          boxShadow: 3,
-          transition: 'opacity 0.3s ease',
-          opacity: isFlipped ? 0 : 1,
-          visibility: isFlipped ? 'hidden' : 'visible',
-        }}
-      >
-        <CardContent>
-          <Typography variant="h5" component="div" align="center">
-            {front}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
-            Click to see the answer
-          </Typography>
-        </CardContent>
-      </Card>
-
-      {/* Back Card */}
-      <Card
-        sx={{
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#f5f5f5',
-          boxShadow: 3,
-          transition: 'opacity 0.3s ease',
-          opacity: isFlipped ? 1 : 0,
-          visibility: isFlipped ? 'visible' : 'hidden',
-        }}
-      >
-        <CardContent>
-          <Typography variant="h5" component="div" align="center">
-            {back}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
-            Click to see the question
-          </Typography>
-        </CardContent>
-      </Card>
+    <Box sx={{ width: '100%', height: '300px' }}>
+      {!showingAnswer ? (
+        // Question Card (Front)
+        <Card 
+          sx={{ 
+            height: '100%', 
+            display: 'flex', 
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            backgroundColor: '#ffffff',
+            boxShadow: 3,
+          }}
+        >
+          <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <Typography variant="h5" component="div" align="center">
+              {front}
+            </Typography>
+          </CardContent>
+          <Box sx={{ p: 2, textAlign: 'center' }}>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={() => setShowingAnswer(true)}
+            >
+              Show Answer
+            </Button>
+          </Box>
+        </Card>
+      ) : (
+        // Answer Card (Back)
+        <Card 
+          sx={{ 
+            height: '100%', 
+            display: 'flex', 
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            backgroundColor: '#f5f5f5',
+            boxShadow: 3,
+          }}
+        >
+          <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <Typography variant="h5" component="div" align="center">
+              {back}
+            </Typography>
+          </CardContent>
+          <Box sx={{ p: 2, textAlign: 'center' }}>
+            <Button 
+              variant="contained" 
+              color="secondary" 
+              onClick={() => setShowingAnswer(false)}
+            >
+              Show Question
+            </Button>
+          </Box>
+        </Card>
+      )}
     </Box>
   );
 };
