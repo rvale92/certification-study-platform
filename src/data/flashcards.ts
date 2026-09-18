@@ -192,7 +192,7 @@ export const flashcards: Flashcard[] = [
     category: 'Architecture and Design'
   },
 
-  // SC-205 Flashcards
+  // SC-200 Flashcards
   {
     question: 'What is Azure Sentinel?',
     answer: 'Azure Sentinel is a cloud-native SIEM and SOAR solution that provides intelligent security analytics and threat intelligence across the enterprise',
