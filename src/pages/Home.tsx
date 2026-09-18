@@ -19,7 +19,7 @@ const certifications = [
     color: '#FF0000',
   },
   {
-    name: 'Microsoft SC-205',
+    name: 'Microsoft SC-200',
     description: 'Microsoft Security Operations Analyst',
     color: '#00A4EF',
   },
