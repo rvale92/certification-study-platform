@@ -76,7 +76,7 @@ const topics = [
     ],
   },
   {
-    category: 'SC-205',
+    category: 'SC-200',
     topics: [
       {
         title: 'Microsoft Security Solutions',

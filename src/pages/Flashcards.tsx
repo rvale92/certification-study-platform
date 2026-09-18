@@ -19,7 +19,7 @@ const examTypes = [
   { id: 'jncia', name: 'JNCIA', questions: jnciaQuestions },
   { id: 'ccna', name: 'CCNA', questions: ccnaQuestions },
   { id: 'security', name: 'Security+', questions: securityQuestions },
-  { id: 'sc205', name: 'SC-205', questions: sc205Questions },
+  { id: 'sc205', name: 'SC-200', questions: sc205Questions },
 ];
 
 const Flashcards: React.FC = () => {

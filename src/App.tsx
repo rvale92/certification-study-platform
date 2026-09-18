@@ -196,7 +196,7 @@ const certifications = [
     color: '#FF0000',
   },
   {
-    name: 'Microsoft SC-205',
+    name: 'Microsoft SC-200',
     description: 'Microsoft Security Operations Analyst',
     color: '#00A4EF',
   },
@@ -250,7 +250,7 @@ const exams = [
   },
   {
     id: 'sc205',
-    name: 'Microsoft SC-205',
+    name: 'Microsoft SC-200',
     description: 'Microsoft Security Operations Analyst',
     color: '#00A4EF',
     duration: 90,
@@ -420,7 +420,7 @@ const topics: Topic[] = [
     exam: 'security',
     description: 'Implement security controls across various platforms and environments. Learn about identity management, secure protocols, and security for mobile and embedded systems.'
   },
-  // SC-205 Topics
+  // SC-200 Topics
   {
     title: 'Microsoft Security Solutions',
     icon: SecurityIcon,
@@ -1707,7 +1707,7 @@ const Flashcards: React.FC = () => {
           variant={selectedExam === 'sc205' ? 'contained' : 'outlined'}
           onClick={() => handleExamChange('sc205')}
         >
-          SC-205
+          SC-200
         </Button>
       </Box>
 
@@ -1858,7 +1858,7 @@ const StudyTopics: React.FC = () => {
       'Mobile Security': 'Approaches to securing mobile devices, applications, and data in enterprise environments.',
       'Embedded Systems': 'Security considerations for IoT devices, industrial control systems, and other embedded technologies.',
       
-      // SC-205 topic descriptions
+      // SC-200 topic descriptions
       'Microsoft Defender for Cloud': 'Cloud-native security management service providing protection across Azure, hybrid, and multi-cloud environments.',
       'Microsoft Sentinel': 'Cloud-native SIEM and SOAR solution for intelligent security analytics and threat intelligence across enterprise.',
       'Microsoft Defender for Identity': 'Cloud-based security solution that identifies, detects, and investigates advanced threats against your identity infrastructure.',
@@ -1935,7 +1935,7 @@ const StudyTopics: React.FC = () => {
           variant={selectedExam === 'sc205' ? 'contained' : 'outlined'}
           onClick={() => setSelectedExam('sc205')}
         >
-          SC-205
+          SC-200
         </Button>
       </Box>
 

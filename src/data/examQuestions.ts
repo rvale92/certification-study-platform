@@ -3732,7 +3732,7 @@ export const securityQuestions: Question[] = [
   }
 ];
 
-// SC-205 Questions (120 total)
+// SC-200 Questions (120 total)
 export const sc205Questions: Question[] = [
   {
     id: 1,

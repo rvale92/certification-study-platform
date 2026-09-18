@@ -1,53 +1,74 @@
-# JNCIA Study App
+# Certification Study Platform
 
-A comprehensive study platform for IT certification preparation, focusing on JNCIA, CCNA, Security+, and SC-205 certifications.
+A React + TypeScript study application for practicing IT certification concepts across networking and security topics.
+
+The current web application includes content for:
+
+- JNCIA-Junos
+- Cisco CCNA
+- CompTIA Security+
+- Microsoft SC-200 Security Operations Analyst
+
+## What this project demonstrates
+
+- React and TypeScript application development
+- Material UI component design
+- Client-side routing with React Router
+- Timed practice exams and answer review
+- Interactive flashcards
+- Structured study-topic navigation
+- Large local question/data sets
+- GitHub Pages deployment configuration
 
 ## Features
 
-- **Practice Exams**: Take timed practice exams that simulate the real certification experience
-- **Flashcards**: Review key concepts and terms with interactive flashcards
-- **Study Topics**: Explore detailed study materials organized by topic
-- **Progress Tracking**: Monitor your progress and identify areas for improvement
+### Practice exams
+Work through certification-focused questions with scoring, explanations, progress tracking, and exam review.
 
-## Tech Stack
+### Flashcards
+Review questions and explanations as interactive flashcards, with filtering and navigation.
 
-- React
+### Study topics
+Browse structured learning areas for networking, security, Junos, Cisco, and Microsoft security operations.
+
+## Tech stack
+
+- React 18
 - TypeScript
-- Material-UI (MUI)
+- Material UI
 - React Router
+- Create React App
+- GitHub Pages
 
-## Getting Started
+## Run locally
 
-1. Clone the repository:
 ```bash
-git clone [your-repo-url]
-```
-
-2. Install dependencies:
-```bash
+git clone https://github.com/rvale92/certification-study-platform.git
+cd certification-study-platform
 npm install
-```
-
-3. Start the development server:
-```bash
 npm start
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Then open `http://localhost:3000`.
 
-## Available Scripts
+## Build
 
-In the project directory, you can run:
+```bash
+npm run build
+```
 
-- `npm start`: Runs the app in development mode
-- `npm test`: Launches the test runner
-- `npm run build`: Builds the app for production
-- `npm run eject`: Ejects from Create React App
+## Deployment
 
-## Contributing
+The project is configured for GitHub Pages at:
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+https://rvale92.github.io/certification-study-platform
 
-## License
+## Project history
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This repository originally contained files from an unrelated Peppa-themed mobile learning prototype alongside the certification web application. Those unrelated mobile files were separated during a portfolio cleanup so the default branch now represents the certification study platform clearly.
+
+The original mixed state is preserved in the `archive/pre-cleanup-2026-09-18` branch.
+
+## Scope
+
+This is a personal learning and portfolio project. Practice content is intended for study and experimentation and should not be treated as official exam material.

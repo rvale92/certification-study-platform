@@ -96,7 +96,7 @@ const Flashcards: React.FC = () => {
                     <MenuItem value="jncia">JNCIA</MenuItem>
                     <MenuItem value="ccna">CCNA</MenuItem>
                     <MenuItem value="security">Security+</MenuItem>
-                    <MenuItem value="sc205">SC-205</MenuItem>
+                    <MenuItem value="sc205">SC-200</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
