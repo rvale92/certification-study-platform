@@ -123,7 +123,7 @@ const ExamReview: React.FC = () => {
       case 'security':
         return 'CompTIA Security+';
       case 'sc205':
-        return 'Microsoft SC-205';
+        return 'Microsoft SC-200';
       default:
         return 'Unknown Exam';
     }
