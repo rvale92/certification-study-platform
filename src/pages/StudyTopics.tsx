@@ -89,24 +89,19 @@ const topics = [
     category: 'SC-200',
     topics: [
       {
-        title: 'Manage Security Operations Environment',
-        description: 'Configure and manage Microsoft Sentinel and the security operations workspace.',
-        link: 'https://learn.microsoft.com/en-us/certifications/exams/sc-200/'
+        title: 'Manage a security operations environment',
+        description: 'Configure Defender XDR and Sentinel, data ingestion, detections, automation, and the SOC platform.',
+        link: 'https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/sc-200'
       },
       {
-        title: 'Configure Protections and Detections',
-        description: 'Configure Microsoft security protections, detections, and data connectors.',
-        link: 'https://learn.microsoft.com/en-us/certifications/exams/sc-200/'
+        title: 'Respond to security incidents',
+        description: 'Investigate and remediate alerts across Defender XDR, endpoints, identities, Microsoft 365, and Sentinel.',
+        link: 'https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/sc-200'
       },
       {
-        title: 'Manage Incident Response',
-        description: 'Investigate alerts and incidents and coordinate response actions.',
-        link: 'https://learn.microsoft.com/en-us/certifications/exams/sc-200/'
-      },
-      {
-        title: 'Perform Threat Hunting',
-        description: 'Use queries and threat intelligence to proactively search for threats.',
-        link: 'https://learn.microsoft.com/en-us/certifications/exams/sc-200/'
+        title: 'Perform threat hunting',
+        description: 'Use KQL, Defender XDR Advanced Hunting, Sentinel hunting, graphs, and notebooks to proactively find threats.',
+        link: 'https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/sc-200'
       },
     ],
   },

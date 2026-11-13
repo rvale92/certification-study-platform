@@ -79,7 +79,7 @@ export const certifications: Certification[] = [
     examDurationMinutes: 90,
     officialQuestionCount: null,
     maxQuestionCount: 90,
-    practiceQuestionCount: 39,
+    practiceQuestionCount: 65,
     domains: [
       'General Security Concepts',
       'Threats, Vulnerabilities, and Mitigations',
@@ -97,12 +97,11 @@ export const certifications: Certification[] = [
     examDurationMinutes: 100,
     officialQuestionCount: null,
     maxQuestionCount: null,
-    practiceQuestionCount: 9,
+    practiceQuestionCount: 65,
     domains: [
-      'Manage Security Operations Environment',
-      'Configure Protections and Detections',
-      'Manage Incident Response',
-      'Perform Threat Hunting',
+      'Manage a security operations environment',
+      'Respond to security incidents',
+      'Perform threat hunting',
     ],
   },
 ];

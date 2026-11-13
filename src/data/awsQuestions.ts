@@ -74,14 +74,14 @@ export const awsSaaQuestions: Question[] = [
   ], 'AWS Secrets Manager',
   'Secrets Manager stores secrets and supports managed rotation integrations for supported databases.',
   'the other services provide logging, compliance artifacts, or shared file storage rather than managed secret lifecycle.'),
-  question(domains.secure, 'A security team must record API activity across all accounts in an AWS Organization and retain logs in a dedicated account. What should it configure?', [
+  question(domains.secure, 'A security team must centrally record supported AWS API management events across every account in an AWS Organization. S3 object-level and Lambda invocation data events are not required. What should it configure?', [
     'A multi-Region organization trail in AWS CloudTrail with a centralized log destination',
     'A CloudWatch dashboard in each member account',
     'VPC Flow Logs on the organization management account only',
     'An S3 access log on one application bucket',
   ], 'A multi-Region organization trail in AWS CloudTrail with a centralized log destination',
-  'An organization trail records supported account activity across the organization and can deliver audit logs to a central S3 bucket.',
-  'the requirement is organization-wide API auditing; resource metrics, network flow logs, and a single bucket access log cover different events.'),
+  'A multi-Region organization trail records supported management events across member accounts and can deliver them to a central S3 bucket. S3 object-level and Lambda invocation data events require their own data-event selectors.',
+  'the requirement is organization-wide management-event auditing; metrics, network-flow logs, and one bucket access log do not provide that API audit trail.'),
   question(domains.secure, 'A three-tier application runs on EC2. The database must accept connections only from the application tier, even when instance addresses change. Which control should be used?', [
     'Allow the database security group inbound traffic from the application tier security group on the database port',
     'Allow inbound database traffic from 0.0.0.0/0 and restrict the application subnet with a network ACL',

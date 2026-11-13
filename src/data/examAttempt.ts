@@ -42,6 +42,7 @@ const isExamAttempt = (value: unknown, certification: CertificationId): value is
   if (!isRecord(value) || value.certification !== certification || !Array.isArray(value.questions)) return false;
   if (!value.questions.every(isQuestion) || !isRecord(value.domainBreakdown)) return false;
   return typeof value.completedAt === 'string'
+    && Number.isFinite(Date.parse(value.completedAt))
     && typeof value.totalQuestions === 'number'
     && typeof value.correctAnswers === 'number'
     && typeof value.scorePercent === 'number'
@@ -64,4 +65,20 @@ export const loadExamAttempt = (certification: CertificationId): ExamAttempt | n
     throw new Error(`Saved exam attempt for ${certification} has an invalid format.`);
   }
   return parsed;
+};
+
+export const loadMostRecentExamAttempt = (certifications: CertificationId[]): ExamAttempt | null => {
+  let latestAttempt: ExamAttempt | null = null;
+
+  for (const certification of certifications) {
+    const attempt = loadExamAttempt(certification);
+    if (
+      attempt
+      && (!latestAttempt || Date.parse(attempt.completedAt) > Date.parse(latestAttempt.completedAt))
+    ) {
+      latestAttempt = attempt;
+    }
+  }
+
+  return latestAttempt;
 };

@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Card,
+  CardActionArea,
   CardContent,
   CardActions,
   Chip,
@@ -1628,7 +1629,13 @@ const Flashcards: React.FC = () => {
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
-      if (event.target instanceof HTMLElement && event.target.closest('button, a, input, select, textarea')) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && (
+        target.isContentEditable
+        || target.closest(
+          'button, a[href], input, select, textarea, [contenteditable="true"], [role="combobox"], [role="button"], [role="menu"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="listbox"], [role="option"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="slider"]',
+        )
+      )) return;
       if (event.code === 'Space') {
         event.preventDefault();
         setIsFlipped((flipped) => !flipped);
@@ -1730,17 +1737,10 @@ const Flashcards: React.FC = () => {
       {activeCard ? (
         <Grid container spacing={2}>
           <Grid item xs={12}>
-            <Card
-              role="button"
-              tabIndex={0}
-              aria-label={isFlipped ? 'Flashcard answer. Press Space to show the question.' : 'Flashcard question. Press Space to show the answer.'}
-              onClick={() => setIsFlipped((flipped) => !flipped)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  setIsFlipped((flipped) => !flipped);
-                }
-              }}
+            <Card>
+              <CardActionArea
+                aria-label={isFlipped ? 'Flashcard answer. Press Space to show the question.' : 'Flashcard question. Press Space to show the answer.'}
+                onClick={() => setIsFlipped((flipped) => !flipped)}
               sx={{
                 minHeight: { xs: 240, sm: 300 },
                 display: 'flex',
@@ -1751,14 +1751,15 @@ const Flashcards: React.FC = () => {
                 overflowWrap: 'anywhere',
                 background: 'linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(219,39,119,0.08) 100%)',
               }}
-            >
-              <CardContent sx={{ textAlign: 'center', width: '100%' }}>
-                <Typography variant="overline">{activeCard.domain}</Typography>
-                <Typography variant="h5" component="div" sx={{ whiteSpace: 'pre-line', overflowWrap: 'anywhere', my: 2 }}>
-                  {isFlipped ? activeCard.answer : activeCard.question}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">{isFlipped ? 'Answer and explanation' : 'Question · click or press Space to flip'}</Typography>
-              </CardContent>
+              >
+                <CardContent sx={{ textAlign: 'center', width: '100%' }}>
+                  <Typography variant="overline">{activeCard.domain}</Typography>
+                  <Typography variant="h5" component="div" sx={{ whiteSpace: 'pre-line', overflowWrap: 'anywhere', my: 2 }}>
+                    {isFlipped ? activeCard.answer : activeCard.question}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">{isFlipped ? 'Answer and explanation' : 'Question · click or press Space to flip'}</Typography>
+                </CardContent>
+              </CardActionArea>
             </Card>
           </Grid>
           <Grid item xs={12}>
@@ -2105,6 +2106,7 @@ function App() {
               <Route path="/exam/:examId" element={<Exam />} />
               <Route path="/flashcards" element={<Flashcards />} />
               <Route path="/study-topics" element={<StudyTopics />} />
+              <Route path="/exam-review" element={<ExamReview />} />
               <Route path="/exam-review/:examId" element={<ExamReview />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

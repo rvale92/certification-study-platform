@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Box,
+  Button,
   Card,
   CardContent,
   Chip,
@@ -12,16 +13,24 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import { useParams } from 'react-router-dom';
+import { Link as RouterLink, useParams } from 'react-router-dom';
 import { certifications } from '../data/certifications';
-import { loadExamAttempt } from '../data/examAttempt';
+import { loadExamAttempt, loadMostRecentExamAttempt } from '../data/examAttempt';
 
 const ExamReview: React.FC = () => {
   const { examId } = useParams<{ examId: string }>();
-  const certification = certifications.find((item) => item.id === examId);
+  const requestedCertification = certifications.find((item) => item.id === examId);
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
+  const attempt = useMemo(() => {
+    if (examId && !requestedCertification) return null;
+    return requestedCertification
+      ? loadExamAttempt(requestedCertification.id)
+      : loadMostRecentExamAttempt(certifications.map(({ id }) => id));
+  }, [examId, requestedCertification]);
+  const certification = requestedCertification
+    ?? certifications.find((item) => item.id === attempt?.certification);
 
-  if (!certification) {
+  if (examId && !requestedCertification) {
     return (
       <Container maxWidth="lg">
         <Typography variant="h4" component="h1">Exam not found</Typography>
@@ -29,21 +38,26 @@ const ExamReview: React.FC = () => {
     );
   }
 
-  const attempt = loadExamAttempt(certification.id);
-  if (!attempt) {
+  if (!certification || !attempt) {
     return (
-      <Container maxWidth="lg">
+      <Container maxWidth="md">
         <Typography variant="h4" component="h1" gutterBottom>
           No completed practice session
         </Typography>
         <Typography color="text.secondary">
-          Complete a {certification.examCode} practice session to see its score, domain breakdown, and answer review here.
+          {certification
+            ? `Complete a ${certification.examCode} practice session to see its score, domain breakdown, and answer review here.`
+            : 'Complete a practice session to see its score, domain breakdown, and answer review here.'}
         </Typography>
+        <Button component={RouterLink} to="/practice-exams" variant="contained" sx={{ mt: 2 }}>
+          Browse practice exams
+        </Button>
       </Container>
     );
   }
 
-  const selectedQuestion = attempt.questions.find((question) => question.id === selectedQuestionId);
+  const selectedQuestion = attempt.questions.find((question) => question.id === selectedQuestionId)
+    ?? attempt.questions[0];
 
   return (
     <Container maxWidth="lg">

@@ -359,10 +359,11 @@ const domainFor = (certification: Flashcard['certification'], question: string, 
     if (/policy|audit|risk|compliance|governance|awareness|procedure/.test(content)) return 'Security Program Management and Oversight';
     return 'General Security Concepts';
   }
-  if (/incident|alert|response|containment|eradication/.test(content)) return 'Manage Incident Response';
-  if (/hunt|threat actor|threat intelligence/.test(content)) return 'Perform Threat Hunting';
-  if (/sentinel|log analytics|monitor|siem|soar/.test(content)) return 'Manage Security Operations Environment';
-  return 'Configure Protections and Detections';
+  if (/kql|hunt|threat actor|threat intelligence|hunting query/.test(content)) return 'Perform threat hunting';
+  if (/incident|alert|response|containment|eradication|compromised|investigat|remediat|defender for cloud|defender for identity|entra id|purview/.test(content)) {
+    return 'Respond to security incidents';
+  }
+  return 'Manage a security operations environment';
 };
 
 const certificationFor = (exam: string): Flashcard['certification'] => {

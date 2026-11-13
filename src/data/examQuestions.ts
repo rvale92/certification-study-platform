@@ -1,4 +1,9 @@
 import { awsSaaQuestions } from './awsQuestions';
+import {
+  ccnaAutomationQuestions,
+  sc200AdditionalQuestions,
+  securityPlusAdditionalQuestions,
+} from './completedQuestions';
 
 export type CertificationId = 'aws-saa-c03' | 'jncia' | 'ccna' | 'security-plus' | 'sc-200';
 
@@ -49,7 +54,7 @@ const migratedQuestions: Question[][] = [
     },
     {
       "id": "jncia-004",
-      "question": "Which OSPF version is used for IPv4 routing?",
+      "question": "Which OSPF version was originally specified for IPv4 routing before OSPFv3 added IPv4 address-family support?",
       "options": [
         "OSPFv2",
         "OSPFv3",
@@ -57,7 +62,7 @@ const migratedQuestions: Question[][] = [
         "OSPFv5"
       ],
       "correctAnswer": "OSPFv2",
-      "explanation": "OSPFv2 is the OSPF version for IPv4; OSPFv3 is used for IPv6.",
+      "explanation": "OSPFv2 was specified for IPv4. OSPFv3 was initially specified for IPv6 and can also support IPv4 address families, so the version is not an absolute IPv4-versus-IPv6 distinction.",
       "domain": "Routing Fundamentals"
     },
     {
@@ -478,15 +483,15 @@ const migratedQuestions: Question[][] = [
     },
     {
       "id": "jncia-037",
-      "question": "Which routing protocol is used for internal routing in Junos OS?",
+      "question": "Which Junos-supported IGP is link-state, uses the shortest-path-first algorithm, and organizes routers into areas?",
       "options": [
         "OSPF",
         "BGP",
         "RIP",
-        "IS-IS"
+        "Static routing"
       ],
       "correctAnswer": "OSPF",
-      "explanation": "OSPF (Open Shortest Path First) is commonly used for internal routing in Junos OS.",
+      "explanation": "OSPF is a link-state interior gateway protocol that uses SPF calculations and areas. BGP is an exterior path-vector protocol, RIP uses distance-vector metrics, and static routes are not a routing protocol.",
       "domain": "Routing Fundamentals"
     },
     {
@@ -948,7 +953,7 @@ const migratedQuestions: Question[][] = [
     },
     {
       "id": "ccna-004",
-      "question": "Which OSPF version is used for IPv4 routing?",
+      "question": "A Cisco IOS deployment uses the original IPv4 OSPF specification and does not use OSPFv3 address-family extensions. Which protocol version is configured?",
       "options": [
         "OSPFv2",
         "OSPFv3",
@@ -956,7 +961,7 @@ const migratedQuestions: Question[][] = [
         "OSPFv5"
       ],
       "correctAnswer": "OSPFv2",
-      "explanation": "OSPFv2 is used for IPv4; OSPFv3 is used for IPv6. The version is selected by the configured address family, not a universal IOS default.",
+      "explanation": "OSPFv2 was specified for IPv4. OSPFv3 was initially specified for IPv6 and can also support IPv4 address families, so the version is not an absolute IPv4-versus-IPv6 distinction.",
       "domain": "IP Connectivity"
     },
     {
@@ -1025,19 +1030,6 @@ const migratedQuestions: Question[][] = [
       "domain": "IP Connectivity"
     },
     {
-      "id": "ccna-010",
-      "question": "What is the purpose of the 'no' command in Cisco IOS?",
-      "options": [
-        "To remove configuration statements",
-        "To add configuration statements",
-        "To modify configuration statements",
-        "To save configuration statements"
-      ],
-      "correctAnswer": "To remove configuration statements",
-      "explanation": "The 'no' command is used to remove configuration statements in Cisco IOS.",
-      "domain": "Network Fundamentals"
-    },
-    {
       "id": "ccna-011",
       "question": "Which command shows the system version in Cisco IOS?",
       "options": [
@@ -1061,19 +1053,6 @@ const migratedQuestions: Question[][] = [
       ],
       "correctAnswer": "show version",
       "explanation": "show version includes the device uptime on common Cisco IOS platforms.",
-      "domain": "Network Fundamentals"
-    },
-    {
-      "id": "ccna-013",
-      "question": "What is the purpose of the 'enable' command in Cisco IOS?",
-      "options": [
-        "To enter privileged EXEC mode",
-        "To exit privileged EXEC mode",
-        "To save configuration",
-        "To delete configuration"
-      ],
-      "correctAnswer": "To enter privileged EXEC mode",
-      "explanation": "The 'enable' command is used to enter privileged EXEC mode in Cisco IOS.",
       "domain": "Network Fundamentals"
     },
     {
@@ -1234,15 +1213,15 @@ const migratedQuestions: Question[][] = [
     },
     {
       "id": "ccna-026",
-      "question": "Which Cisco spanning-tree mode runs a separate spanning-tree instance per VLAN?",
+      "question": "Which Cisco per-VLAN spanning-tree mode uses rapid 802.1w convergence rather than the legacy 802.1D behavior?",
       "options": [
+        "Rapid PVST+",
         "PVST+",
-        "RSTP",
-        "MSTP",
-        "RPVST+"
+        "MST",
+        "Classic STP"
       ],
-      "correctAnswer": "PVST+",
-      "explanation": "PVST+ runs a spanning-tree instance per VLAN; the actual default depends on switch platform and configuration.",
+      "correctAnswer": "Rapid PVST+",
+      "explanation": "Rapid PVST+ is Cisco's per-VLAN implementation of rapid spanning tree based on IEEE 802.1w. Legacy PVST+ uses 802.1D behavior; MST groups VLANs into spanning-tree instances.",
       "domain": "Network Access"
     },
     {
@@ -1251,7 +1230,7 @@ const migratedQuestions: Question[][] = [
       "options": [
         "show mac address-table",
         "show mac table",
-        "show mac-address-table",
+        "show vlan brief",
         "show mac-address"
       ],
       "correctAnswer": "show mac address-table",
@@ -1350,19 +1329,6 @@ const migratedQuestions: Question[][] = [
       "domain": "Network Fundamentals"
     },
     {
-      "id": "ccna-035",
-      "question": "What is the purpose of the 'copy' command in Cisco IOS?",
-      "options": [
-        "To copy files",
-        "To configure interfaces",
-        "To save configuration",
-        "To delete configuration"
-      ],
-      "correctAnswer": "To copy files",
-      "explanation": "The 'copy' command is used to copy files in Cisco IOS.",
-      "domain": "Network Fundamentals"
-    },
-    {
       "id": "ccna-036",
       "question": "Which command shows the OSPF neighbors in Cisco IOS?",
       "options": [
@@ -1376,19 +1342,6 @@ const migratedQuestions: Question[][] = [
       "domain": "IP Connectivity"
     },
     {
-      "id": "ccna-037",
-      "question": "What is the purpose of the 'delete' command in Cisco IOS?",
-      "options": [
-        "To delete files",
-        "To configure interfaces",
-        "To save configuration",
-        "To copy files"
-      ],
-      "correctAnswer": "To delete files",
-      "explanation": "The 'delete' command is used to delete files in Cisco IOS.",
-      "domain": "Network Fundamentals"
-    },
-    {
       "id": "ccna-038",
       "question": "Which command shows the VLAN information in Cisco IOS?",
       "options": [
@@ -1400,19 +1353,6 @@ const migratedQuestions: Question[][] = [
       "correctAnswer": "show vlan",
       "explanation": "The 'show vlan' command displays VLAN information in Cisco IOS.",
       "domain": "Network Access"
-    },
-    {
-      "id": "ccna-039",
-      "question": "What is the purpose of the 'write' command in Cisco IOS?",
-      "options": [
-        "To save configuration",
-        "To delete configuration",
-        "To copy files",
-        "To restart the device"
-      ],
-      "correctAnswer": "To save configuration",
-      "explanation": "The 'write' command is used to save configuration in Cisco IOS.",
-      "domain": "Network Fundamentals"
     },
     {
       "id": "ccna-040",
@@ -1439,19 +1379,6 @@ const migratedQuestions: Question[][] = [
       "correctAnswer": "show standby",
       "explanation": "The 'show standby' command displays HSRP status information in Cisco IOS.",
       "domain": "IP Services"
-    },
-    {
-      "id": "ccna-042",
-      "question": "What is the purpose of the 'erase' command in Cisco IOS?",
-      "options": [
-        "To delete configuration",
-        "To save configuration",
-        "To copy files",
-        "To restart the device"
-      ],
-      "correctAnswer": "To delete configuration",
-      "explanation": "The 'erase' command is used to delete configuration in Cisco IOS.",
-      "domain": "Network Fundamentals"
     },
     {
       "id": "ccna-043",
@@ -1571,19 +1498,6 @@ const migratedQuestions: Question[][] = [
       "domain": "Network Fundamentals"
     },
     {
-      "id": "ccna-052",
-      "question": "What is the purpose of the 'erase' command in Cisco IOS?",
-      "options": [
-        "To delete startup configuration",
-        "To save configuration",
-        "To copy files",
-        "To restart the device"
-      ],
-      "correctAnswer": "To delete startup configuration",
-      "explanation": "The 'erase' command is used to delete startup configuration in Cisco IOS.",
-      "domain": "Network Fundamentals"
-    },
-    {
       "id": "ccna-053",
       "question": "Which command provides detailed operational counters for a specific Cisco IOS interface?",
       "options": [
@@ -1624,15 +1538,15 @@ const migratedQuestions: Question[][] = [
     },
     {
       "id": "ccna-056",
-      "question": "Which command shows the interface statistics in Cisco IOS?",
+      "question": "Which command template displays operational counters for a specific Cisco IOS interface?",
       "options": [
-        "show interface statistics",
-        "show int stats",
-        "show interface",
-        "show int"
+        "show interfaces <interface>",
+        "show ip route <interface>",
+        "show controllers",
+        "show running-config"
       ],
-      "correctAnswer": "show interface statistics",
-      "explanation": "The 'show interface statistics' command displays interface statistics in Cisco IOS.",
+      "correctAnswer": "show interfaces <interface>",
+      "explanation": "The show interfaces command accepts an interface identifier and displays operational status and counters. Replace <interface> with an identifier such as GigabitEthernet0/1.",
       "domain": "Network Fundamentals"
     },
     {
@@ -1663,15 +1577,15 @@ const migratedQuestions: Question[][] = [
     },
     {
       "id": "ccna-059",
-      "question": "Which command shows the interface bandwidth in Cisco IOS?",
+      "question": "An engineer needs the configured bandwidth value for GigabitEthernet0/1, not a live throughput measurement. Which IOS command displays the interface's BW field?",
       "options": [
-        "show interface bandwidth",
-        "show int bw",
-        "show interface",
-        "show int"
+        "show interfaces GigabitEthernet0/1",
+        "show processes cpu",
+        "show ip route",
+        "show interfaces counters errors"
       ],
-      "correctAnswer": "show interface bandwidth",
-      "explanation": "The 'show interface bandwidth' command displays interface bandwidth in Cisco IOS.",
+      "correctAnswer": "show interfaces GigabitEthernet0/1",
+      "explanation": "The interface output includes the configured BW value. This is a bandwidth parameter used by routing and QoS calculations, not a measurement of current traffic throughput.",
       "domain": "Network Fundamentals"
     },
     {
@@ -1689,15 +1603,15 @@ const migratedQuestions: Question[][] = [
     },
     {
       "id": "ccna-061",
-      "question": "Which command shows the interface MTU in Cisco IOS?",
+      "question": "Which command displays the MTU reported for GigabitEthernet0/1 on Cisco IOS?",
       "options": [
-        "show interface mtu",
-        "show int mtu",
-        "show interface",
-        "show int"
+        "show interfaces GigabitEthernet0/1",
+        "show ip route GigabitEthernet0/1",
+        "show vlan brief",
+        "show controllers ethernet-controller"
       ],
-      "correctAnswer": "show interface mtu",
-      "explanation": "The 'show interface mtu' command displays interface MTU in Cisco IOS.",
+      "correctAnswer": "show interfaces GigabitEthernet0/1",
+      "explanation": "The show interfaces output for the specified interface includes its MTU. Replace the interface identifier with the one being inspected.",
       "domain": "Network Fundamentals"
     },
     {
@@ -1715,15 +1629,15 @@ const migratedQuestions: Question[][] = [
     },
     {
       "id": "ccna-063",
-      "question": "Which command shows the interface queue in Cisco IOS?",
+      "question": "Which IOS command template displays queueing information for a specific interface?",
       "options": [
-        "show interface queue",
-        "show int queue",
-        "show interface",
-        "show int"
+        "show queueing interface <interface>",
+        "show interfaces <interface>",
+        "show ip interface <interface>",
+        "show policy-map control-plane"
       ],
-      "correctAnswer": "show interface queue",
-      "explanation": "The 'show interface queue' command displays interface queue information in Cisco IOS.",
+      "correctAnswer": "show queueing interface <interface>",
+      "explanation": "On IOS platforms that expose interface queueing through this command, show queueing interface accepts the interface identifier. Available queue details depend on platform and configured QoS.",
       "domain": "Network Fundamentals"
     }
   ],
@@ -2287,20 +2201,20 @@ const migratedQuestions: Question[][] = [
       ],
       "correctAnswer": "Both SIEM and SOAR",
       "explanation": "Microsoft Sentinel is both a Security Information and Event Management (SIEM) and Security Orchestration, Automation, and Response (SOAR) solution.",
-      "domain": "Manage Incident Response"
+      "domain": "Manage a security operations environment"
     },
     {
       "id": "sc200-002",
       "question": "What is Microsoft Defender for Cloud?",
       "options": [
-        "A cloud security solution",
+        "A cloud security posture management and workload-protection service",
         "A network monitoring tool",
         "A data backup service",
         "A user management system"
       ],
-      "correctAnswer": "A cloud security solution",
-      "explanation": "Microsoft Defender for Cloud is a cloud security solution that provides threat protection across Azure resources.",
-      "domain": "Configure Protections and Detections"
+      "correctAnswer": "A cloud security posture management and workload-protection service",
+      "explanation": "Microsoft Defender for Cloud provides cloud security posture management and workload protections across supported cloud and hybrid environments.",
+      "domain": "Respond to security incidents"
     },
     {
       "id": "sc200-003",
@@ -2313,20 +2227,7 @@ const migratedQuestions: Question[][] = [
       ],
       "correctAnswer": "An endpoint security platform",
       "explanation": "Microsoft Defender for Endpoint is an enterprise endpoint security platform designed to help prevent, detect, and respond to advanced threats.",
-      "domain": "Configure Protections and Detections"
-    },
-    {
-      "id": "sc200-004",
-      "question": "What is Microsoft Defender for Cloud?",
-      "options": [
-        "A unified security management system",
-        "A network monitoring tool",
-        "A data backup service",
-        "A user management system"
-      ],
-      "correctAnswer": "A unified security management system",
-      "explanation": "Microsoft Defender for Cloud is a unified security management system that strengthens the security posture of your data centers.",
-      "domain": "Configure Protections and Detections"
+      "domain": "Manage a security operations environment"
     },
     {
       "id": "sc200-005",
@@ -2339,7 +2240,7 @@ const migratedQuestions: Question[][] = [
       ],
       "correctAnswer": "A cloud access security broker",
       "explanation": "Microsoft Defender for Cloud Apps is a cloud access security broker that helps you discover and control the use of cloud apps in your organization.",
-      "domain": "Configure Protections and Detections"
+      "domain": "Respond to security incidents"
     },
     {
       "id": "sc200-006",
@@ -2352,7 +2253,7 @@ const migratedQuestions: Question[][] = [
       ],
       "correctAnswer": "A cloud-based identity service",
       "explanation": "Microsoft Entra ID is Microsoft's cloud-based identity and access management service.",
-      "domain": "Configure Protections and Detections"
+      "domain": "Respond to security incidents"
     },
     {
       "id": "sc200-007",
@@ -2365,7 +2266,7 @@ const migratedQuestions: Question[][] = [
       ],
       "correctAnswer": "A data protection solution",
       "explanation": "Microsoft Purview Information Protection helps you classify and protect your documents and emails by applying labels.",
-      "domain": "Configure Protections and Detections"
+      "domain": "Respond to security incidents"
     },
     {
       "id": "sc200-008",
@@ -2378,7 +2279,7 @@ const migratedQuestions: Question[][] = [
       ],
       "correctAnswer": "An identity protection solution",
       "explanation": "Microsoft Defender for Identity is a cloud-based security solution that uses your on-premises Active Directory signals to identify, detect, and investigate advanced threats.",
-      "domain": "Configure Protections and Detections"
+      "domain": "Respond to security incidents"
     },
     {
       "id": "sc200-009",
@@ -2391,20 +2292,7 @@ const migratedQuestions: Question[][] = [
       ],
       "correctAnswer": "A comprehensive monitoring solution",
       "explanation": "Azure Monitor is a comprehensive solution for collecting, analyzing, and acting on telemetry from your cloud and on-premises environments.",
-      "domain": "Manage Security Operations Environment"
-    },
-    {
-      "id": "sc200-010",
-      "question": "What is Microsoft Defender for Cloud?",
-      "options": [
-        "A cloud security posture management solution",
-        "A network monitoring tool",
-        "A data backup service",
-        "A user management system"
-      ],
-      "correctAnswer": "A cloud security posture management solution",
-      "explanation": "Microsoft Defender for Cloud helps you strengthen your security posture and protect against threats.",
-      "domain": "Configure Protections and Detections"
+      "domain": "Manage a security operations environment"
     },
     {
       "id": "sc200-011",
@@ -2417,7 +2305,7 @@ const migratedQuestions: Question[][] = [
       ],
       "correctAnswer": "A log management and analytics service",
       "explanation": "Azure Log Analytics is a service that helps you collect and analyze data generated by resources in your cloud and on-premises environments.",
-      "domain": "Manage Security Operations Environment"
+      "domain": "Manage a security operations environment"
     }
   ]
 ];
@@ -2476,9 +2364,13 @@ export const examQuestions: ExamQuestions = {
     ...migratedQuestions[0].filter(({ id }) => !/^jncia-(?:04[89]|0[5-6]\d)$/.test(id)),
     ...componentQuestions.jncia,
   ]),
-  ccna: deduplicateQuestions([...migratedQuestions[1], ...componentQuestions.ccna]),
-  'security-plus': deduplicateQuestions([...migratedQuestions[2], ...componentQuestions['security-plus']]),
-  'sc-200': deduplicateQuestions(migratedQuestions[3]),
+  ccna: deduplicateQuestions([...migratedQuestions[1], ...componentQuestions.ccna, ...ccnaAutomationQuestions]),
+  'security-plus': deduplicateQuestions([
+    ...migratedQuestions[2],
+    ...componentQuestions['security-plus'],
+    ...securityPlusAdditionalQuestions,
+  ]),
+  'sc-200': deduplicateQuestions([...migratedQuestions[3], ...sc200AdditionalQuestions]),
 };
 
 export const jnciaQuestions = examQuestions.jncia;
