@@ -1,53 +1,82 @@
-# JNCIA Study App
+# Certification Study Platform
 
-A comprehensive study platform for IT certification preparation, focusing on JNCIA, CCNA, Security+, and SC-205 certifications.
+**Live demo:** [rvale92.github.io/certification-study-platform](https://rvale92.github.io/certification-study-platform/)
+
+A responsive React and TypeScript study app for IT and cloud certification practice. Review scenario-based questions, study answer-backed flashcards, and inspect results from completed practice sessions.
+
+## Certification tracks
+
+- **AWS Certified Solutions Architect – Associate (SAA-C03):** 65 questions / 130 minutes across the four official exam domains.
+- **JNCIA-Junos (JN0-106):** 65-question / 90-minute practice exam.
+- **Cisco CCNA (200-301):** 65-question custom practice session / 120 minutes. The official exam question count can vary.
+- **CompTIA Security+ (SY0-701):** 39-question custom practice session / 90 minutes. The official exam allows up to 90 questions.
+- **Microsoft Security Operations Analyst Associate (SC-200):** 9-question custom practice session / 100 minutes.
+
+Practice scores are raw question-bank results; they do not represent official scaled exam scores or guarantee a passing result.
 
 ## Features
 
-- **Practice Exams**: Take timed practice exams that simulate the real certification experience
-- **Flashcards**: Review key concepts and terms with interactive flashcards
-- **Study Topics**: Explore detailed study materials organized by topic
-- **Progress Tracking**: Monitor your progress and identify areas for improvement
+- Certification and domain filters for flashcard study.
+- `Needs Review` / `Mastered` confidence tracking saved in `localStorage`, with a review-only queue.
+- Keyboard controls: **Space** flips, **Left/Right** navigates, **1** marks Needs Review, and **2** marks Mastered.
+- Timed full-length practice for AWS SAA-C03 and JNCIA-Junos, plus clearly labeled custom practice sessions for the other tracks.
+- Completed attempt review with the actual answers, score, domain breakdown, and question explanations.
+- GitHub Pages deep-link fallback that restores routes on refresh.
 
-## Tech Stack
+## Tech stack
 
-- React
-- TypeScript
-- Material-UI (MUI)
-- React Router
+- React 18 and TypeScript 4.9
+- Material UI 5
+- React Router 6
+- Create React App (`react-scripts`)
+- GitHub Pages deployment with `gh-pages`
 
-## Getting Started
+## Local development
 
-1. Clone the repository:
-```bash
-git clone [your-repo-url]
-```
+Requirements: Node.js and npm.
 
-2. Install dependencies:
 ```bash
 npm install
-```
-
-3. Start the development server:
-```bash
 npm start
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+The development server opens at [http://localhost:3000](http://localhost:3000).
 
-## Available Scripts
+## Build and deploy
 
-In the project directory, you can run:
+```bash
+npm run build
+npm run deploy
+```
 
-- `npm start`: Runs the app in development mode
-- `npm test`: Launches the test runner
-- `npm run build`: Builds the app for production
-- `npm run eject`: Ejects from Create React App
+`npm run deploy` builds the app and publishes the `build/` directory to the `gh-pages` branch. The repository `homepage` is configured for the live GitHub Pages URL.
 
-## Contributing
+## Adding or editing study content
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Question banks and certification parameters are maintained in [`src/data/examQuestions.ts`](./src/data/examQuestions.ts) and [`src/data/certifications.ts`](./src/data/certifications.ts). Add questions to the array for the matching certification ID; use stable, unique IDs such as `aws-saa-066`, `jncia-086`, `ccna-068`, `secplus-048`, or `sc200-012`.
 
-## License
+Each question follows this shape:
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+```ts
+{
+  id: 'aws-saa-066',
+  question: 'A scenario-based prompt with enough constraints to select one best answer.',
+  options: ['Option A', 'Option B', 'Option C', 'Option D'],
+  correctAnswer: 'Option B',
+  explanation: 'Why the correct answer satisfies the scenario.',
+  domain: 'Design Secure Architectures',
+  distractorExplanations: {
+    'Option A': 'Why this option does not meet the stated requirement.',
+    'Option C': 'Why this option does not meet the stated requirement.',
+    'Option D': 'Why this option does not meet the stated requirement.',
+  },
+}
+```
+
+`domain` must match one of the domains declared for that certification in `certifications.ts`. Flashcards are generated from these questions, with the prompt on the front and the correct answer plus explanation on the back. Curated cards migrated from the earlier decks are kept in [`src/data/flashcards.ts`](./src/data/flashcards.ts); their schema is `{ id, question, answer, certification, domain }`.
+
+Exam duration and practice-session length are configured per certification in `certifications.ts`. Mark a shorter drill as a custom practice session rather than describing it as a full certification exam.
+
+## Progress storage
+
+Flashcard confidence is stored under `certification-study:flashcard-confidence`. The latest completed attempt for each certification is stored under `certification-study:attempt:<certification-id>`. Data is local to the current browser.

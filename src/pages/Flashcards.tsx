@@ -13,18 +13,18 @@ import {
   InputLabel,
 } from '@mui/material';
 import FlipCard from '../components/FlipCard';
-import { jnciaQuestions, ccnaQuestions, securityQuestions, sc205Questions } from '../data/examQuestions';
+import { examQuestions } from '../data/examQuestions';
+import { certifications } from '../data/certifications';
 
-const examTypes = [
-  { id: 'jncia', name: 'JNCIA', questions: jnciaQuestions },
-  { id: 'ccna', name: 'CCNA', questions: ccnaQuestions },
-  { id: 'security', name: 'Security+', questions: securityQuestions },
-  { id: 'sc205', name: 'SC-205', questions: sc205Questions },
-];
+const examTypes = certifications.map((certification) => ({
+  id: certification.id,
+  name: certification.name,
+  questions: examQuestions[certification.id],
+}));
 
 const Flashcards: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedExam, setSelectedExam] = useState('jncia');
+  const [selectedExam, setSelectedExam] = useState<string>('jncia');
 
   const currentExam = examTypes.find(exam => exam.id === selectedExam);
   const currentQuestions = currentExam?.questions || [];
@@ -79,7 +79,7 @@ const Flashcards: React.FC = () => {
             {currentQuestions.length > 0 && (
               <FlipCard
                 front={currentQuestions[currentIndex].question}
-                back={currentQuestions[currentIndex].correctAnswer}
+                back={`Correct answer: ${currentQuestions[currentIndex].correctAnswer}\n\n${currentQuestions[currentIndex].explanation}`}
               />
             )}
           </Box>

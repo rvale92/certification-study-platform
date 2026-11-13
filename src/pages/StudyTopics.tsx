@@ -59,38 +59,53 @@ const topics = [
     category: 'Security+',
     topics: [
       {
-        title: 'Threats and Vulnerabilities',
-        description: 'Learn about different types of threats and vulnerabilities.',
+        title: 'General Security Concepts',
+        description: 'Review foundational security concepts, control types, cryptography, and security responsibilities.',
         link: 'https://www.comptia.org/certifications/security'
       },
       {
-        title: 'Architecture and Design',
-        description: 'Understand security architecture and design principles.',
+        title: 'Threats, Vulnerabilities, and Mitigations',
+        description: 'Identify common threats and vulnerabilities and select appropriate mitigations.',
         link: 'https://www.comptia.org/certifications/security'
       },
       {
-        title: 'Implementation',
-        description: 'Explore security implementation and operations.',
+        title: 'Security Architecture',
+        description: 'Apply secure design principles across networks, cloud services, and resilient systems.',
+        link: 'https://www.comptia.org/certifications/security'
+      },
+      {
+        title: 'Security Operations',
+        description: 'Operate security controls, monitor events, manage identities, and respond to incidents.',
+        link: 'https://www.comptia.org/certifications/security'
+      },
+      {
+        title: 'Security Program Management and Oversight',
+        description: 'Understand security governance, risk, compliance, and oversight practices.',
         link: 'https://www.comptia.org/certifications/security'
       },
     ],
   },
   {
-    category: 'SC-205',
+    category: 'SC-200',
     topics: [
       {
-        title: 'Microsoft Security Solutions',
-        description: 'Learn about Microsoft security tools and solutions.',
+        title: 'Manage Security Operations Environment',
+        description: 'Configure and manage Microsoft Sentinel and the security operations workspace.',
         link: 'https://learn.microsoft.com/en-us/certifications/exams/sc-200/'
       },
       {
-        title: 'Threat Protection',
-        description: 'Understand threat protection and response in Microsoft environments.',
+        title: 'Configure Protections and Detections',
+        description: 'Configure Microsoft security protections, detections, and data connectors.',
         link: 'https://learn.microsoft.com/en-us/certifications/exams/sc-200/'
       },
       {
-        title: 'Information Protection',
-        description: 'Explore information protection and governance.',
+        title: 'Manage Incident Response',
+        description: 'Investigate alerts and incidents and coordinate response actions.',
+        link: 'https://learn.microsoft.com/en-us/certifications/exams/sc-200/'
+      },
+      {
+        title: 'Perform Threat Hunting',
+        description: 'Use queries and threat intelligence to proactively search for threats.',
         link: 'https://learn.microsoft.com/en-us/certifications/exams/sc-200/'
       },
     ],

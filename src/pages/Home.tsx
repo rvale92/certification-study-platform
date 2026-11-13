@@ -1,29 +1,9 @@
 import React from 'react';
 import { Container, Typography, Box, Grid, Card, CardContent, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { certifications as certificationData } from '../data/certifications';
 
-const certifications = [
-  {
-    name: 'JNCIA 105',
-    description: 'Juniper Networks Certified Associate - Junos',
-    color: '#84B135',
-  },
-  {
-    name: 'CCNA',
-    description: 'Cisco Certified Network Associate',
-    color: '#1BA0D7',
-  },
-  {
-    name: 'CompTIA Security+',
-    description: 'Security+ Certification',
-    color: '#FF0000',
-  },
-  {
-    name: 'Microsoft SC-205',
-    description: 'Microsoft Security Operations Analyst',
-    color: '#00A4EF',
-  },
-];
+const certifications = certificationData;
 
 const features = [
   {
@@ -62,7 +42,7 @@ const Home: React.FC = () => {
       </Typography>
       <Grid container spacing={4} sx={{ mb: 6 }}>
         {certifications.map((cert) => (
-          <Grid item xs={12} sm={6} md={3} key={cert.name}>
+          <Grid item xs={12} sm={6} md={3} key={cert.id}>
             <Card
               sx={{
                 height: '100%',
@@ -83,7 +63,7 @@ const Home: React.FC = () => {
                 <Button
                   variant="contained"
                   fullWidth
-                  onClick={() => navigate(`/practice-exams/${cert.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                  onClick={() => navigate('/practice-exams')}
                 >
                   Start Studying
                 </Button>

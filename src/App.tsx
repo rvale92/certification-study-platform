@@ -7,6 +7,7 @@ import {
   Card,
   CardContent,
   CardActions,
+  Chip,
   Container,
   CssBaseline,
   Dialog,
@@ -17,14 +18,18 @@ import {
   FormControl,
   FormControlLabel,
   Grid,
+  InputLabel,
   IconButton,
   LinearProgress,
   List,
   ListItem,
   ListItemText,
+  MenuItem,
   Paper,
   Radio,
   RadioGroup,
+  Select,
+  Switch,
   ThemeProvider,
   Toolbar,
   Typography,
@@ -46,10 +51,18 @@ import {
   Build as BuildIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { examQuestions as examQuestionsData } from './data/examQuestions';
+import { examQuestions as examQuestionsData, Question } from './data/examQuestions';
+import { certifications as certificationData } from './data/certifications';
+import { flashcards } from './data/flashcards';
+import { ExamAttempt, saveExamAttempt } from './data/examAttempt';
 import ExamReview from './pages/ExamReview';
 
 const drawerWidth = 240;
+const publicPath = new URL(process.env.PUBLIC_URL, window.location.origin).pathname.replace(/\/+$/, '');
+const routerBasename = publicPath
+  && (window.location.pathname === publicPath || window.location.pathname.startsWith(`${publicPath}/`))
+  ? publicPath
+  : '';
 
 // Theme configuration
 export const theme = createTheme({
@@ -161,46 +174,8 @@ export const theme = createTheme({
   },
 });
 
-// Types
-interface Question {
-  id: number;
-  question: string;
-  options: string[];
-  correctAnswer: string;
-  explanation: string;
-  category?: string;
-}
-
-interface ExamQuestions {
-  jncia: Question[];
-  ccna: Question[];
-  security: Question[];
-  sc205: Question[];
-}
-
 // Data
-const certifications = [
-  {
-    name: 'JNCIA 105',
-    description: 'Juniper Networks Certified Associate - Junos',
-    color: '#84B135',
-  },
-  {
-    name: 'CCNA',
-    description: 'Cisco Certified Network Associate',
-    color: '#1BA0D7',
-  },
-  {
-    name: 'CompTIA Security+',
-    description: 'Security+ Certification',
-    color: '#FF0000',
-  },
-  {
-    name: 'Microsoft SC-205',
-    description: 'Microsoft Security Operations Analyst',
-    color: '#00A4EF',
-  },
-];
+const certifications = certificationData;
 
 const features = [
   {
@@ -220,60 +195,20 @@ const features = [
   },
 ];
 
-const exams = [
-  {
-    id: 'jncia',
-    name: 'JNCIA 105',
-    description: 'Juniper Networks Certified Associate - Junos',
-    color: '#84B135',
-    duration: 90,
-    passingScore: 70,
-    totalQuestions: 65,
-  },
-  {
-    id: 'ccna',
-    name: 'CCNA',
-    description: 'Cisco Certified Network Associate',
-    color: '#1BA0D7',
-    duration: 90,
-    passingScore: 70,
-    totalQuestions: 65,
-  },
-  {
-    id: 'security',
-    name: 'CompTIA Security+',
-    description: 'Security+ Certification',
-    color: '#FF0000',
-    duration: 90,
-    passingScore: 70,
-    totalQuestions: 65,
-  },
-  {
-    id: 'sc205',
-    name: 'Microsoft SC-205',
-    description: 'Microsoft Security Operations Analyst',
-    color: '#00A4EF',
-    duration: 90,
-    passingScore: 70,
-    totalQuestions: 65,
-  },
-];
-
-// Types for the flashcards
-interface Flashcard {
-  id: string;
-  question: string;
-  answer: string;
-  category?: string;
-  exam: string;
-}
-
-interface FlashcardsData {
-  jncia: Flashcard[];
-  ccna: Flashcard[];
-  security: Flashcard[];
-  sc205: Flashcard[];
-}
+const exams = certificationData.map((certification) => ({
+  id: certification.id,
+  name: certification.name,
+  description: certification.description,
+  color: certification.color,
+  duration: certification.examDurationMinutes,
+  totalQuestions: Math.min(
+    certification.practiceQuestionCount,
+    examQuestionsData[certification.id].length,
+  ),
+  examCode: certification.examCode,
+  isFullLength: certification.officialQuestionCount !== null
+    && certification.practiceQuestionCount === certification.officialQuestionCount,
+}));
 
 // Types for study topics
 interface StudyTopic {
@@ -286,7 +221,7 @@ interface StudyTopicsData {
   jncia: StudyTopic[];
   ccna: StudyTopic[];
   security: StudyTopic[];
-  sc205: StudyTopic[];
+  sc200: StudyTopic[];
 }
 
 // Update the Topic interface
@@ -372,55 +307,75 @@ const topics: Topic[] = [
     icon: HubIcon,
     items: [
       'Static Routing',
-      'OSPF',
-      'EIGRP',
-      'BGP',
-      'Route Redistribution'
+      'Single-area OSPF',
+      'IPv4 and IPv6 routing',
+      'Routing table interpretation'
     ],
     exam: 'ccna',
-    description: 'Learn routing protocols and technologies including static routing, OSPF, EIGRP, BGP, and route redistribution. Understand how to implement and troubleshoot routing in complex networks.'
+    description: 'Practice static routing, single-area OSPF, IPv4 and IPv6 forwarding, and route selection within the CCNA exam scope.'
   },
   // Security+ Topics
   {
-    title: 'Threats, Attacks, and Vulnerabilities',
+    title: 'General Security Concepts',
     icon: SecurityIcon,
     items: [
-      'Malware Types',
-      'Attack Vectors',
-      'Social Engineering',
-      'Vulnerability Assessment',
-      'Penetration Testing'
+      'Security controls',
+      'Change management',
+      'Cryptographic concepts',
+      'Security roles and responsibilities'
     ],
     exam: 'security',
-    description: 'Understand various types of threats, attack vectors, and vulnerabilities in modern networks. Learn about malware, social engineering, and how to assess and test security controls.'
+    description: 'Review foundational security concepts, control types, cryptography, and security responsibilities.'
   },
   {
-    title: 'Architecture and Design',
+    title: 'Threats, Vulnerabilities, and Mitigations',
     icon: BuildIcon,
     items: [
-      'Security Frameworks',
-      'Network Security',
-      'Cloud Security',
-      'Zero Trust',
-      'Secure Protocols'
+      'Threat actors and vectors',
+      'Malware and social engineering',
+      'Vulnerability management',
+      'Mitigation techniques'
     ],
     exam: 'security',
-    description: 'Master security architecture and design principles, including security frameworks, network and cloud security, zero trust architecture, and secure protocol implementation.'
+    description: 'Identify common threats and vulnerabilities and select appropriate mitigations.'
   },
   {
-    title: 'Implementation',
+    title: 'Security Architecture',
     icon: BuildIcon,
     items: [
-      'Identity and Access Management',
-      'Secure Protocols',
-      'Host Security',
-      'Mobile Security',
-      'Embedded Systems'
+      'Secure network design',
+      'Cloud and virtualization security',
+      'Zero Trust architecture',
+      'Resilience and recovery'
     ],
     exam: 'security',
-    description: 'Implement security controls across various platforms and environments. Learn about identity management, secure protocols, and security for mobile and embedded systems.'
+    description: 'Apply secure design principles across networks, cloud services, and resilient systems.'
   },
-  // SC-205 Topics
+  {
+    title: 'Security Operations',
+    icon: BuildIcon,
+    items: [
+      'Identity and access management',
+      'Incident response',
+      'Security monitoring and SIEM',
+      'Vulnerability assessment'
+    ],
+    exam: 'security',
+    description: 'Operate security controls, monitor events, manage identities, and respond to incidents.'
+  },
+  {
+    title: 'Security Program Management and Oversight',
+    icon: BuildIcon,
+    items: [
+      'Policies and procedures',
+      'Risk management',
+      'Security awareness',
+      'Compliance and audits'
+    ],
+    exam: 'security',
+    description: 'Understand security governance, risk, compliance, and oversight practices.'
+  },
+  // SC-200 Topics
   {
     title: 'Microsoft Security Solutions',
     icon: SecurityIcon,
@@ -431,7 +386,7 @@ const topics: Topic[] = [
       'Microsoft Defender for Endpoint',
       'Microsoft Defender for Office 365'
     ],
-    exam: 'sc205',
+    exam: 'sc200',
     description: 'Master Microsoft\'s comprehensive security solutions for cloud, identity, endpoint, and Office 365 environments. Learn to implement and manage these security tools effectively.'
   },
   {
@@ -444,61 +399,22 @@ const topics: Topic[] = [
       'Security Automation',
       'Compliance Management'
     ],
-    exam: 'sc205',
+    exam: 'sc200',
     description: 'Learn to manage security operations using Microsoft tools. Master security monitoring, incident response, threat hunting, and compliance management in a Microsoft environment.'
   },
   {
     title: 'Identity and Access',
     icon: PersonIcon,
     items: [
-      'Azure Active Directory',
+      'Microsoft Entra ID',
       'Conditional Access',
       'Privileged Identity Management',
       'Identity Protection',
       'Access Reviews'
     ],
-    exam: 'sc205',
-    description: 'Implement and manage identity and access solutions using Microsoft Azure AD. Learn about conditional access, privileged identity management, and identity protection features.'
+    exam: 'sc200',
+    description: 'Implement and manage identity and access solutions using Microsoft Entra ID, Conditional Access, Privileged Identity Management, and Identity Protection.'
   }
-];
-
-// Create flashcards directly from exam questions to ensure consistency
-const createFlashcardsFromExamQuestions = () => {
-  const flashcardsData: FlashcardsData = {
-    jncia: [],
-    ccna: [],
-    security: [],
-    sc205: []
-  };
-  
-  // Iterate through all exam questions and create corresponding flashcards
-  Object.entries(examQuestionsData).forEach(([examKey, questions]) => {
-    const examId = examKey as keyof ExamQuestions;
-    
-    questions.forEach((question: Question) => {
-      // Create a flashcard from the question
-      flashcardsData[examId].push({
-        id: `${examId}-${question.id}`,
-        question: question.question,
-        answer: question.explanation || question.correctAnswer,
-        category: question.category || 'General',
-        exam: examId
-      });
-    });
-  });
-  
-  return flashcardsData;
-};
-
-// Create the flashcards from exam questions
-const flashcardsData = createFlashcardsFromExamQuestions();
-
-// Transform the flashcardsData structure to a flat array for the Flashcards component
-const flashcards: Flashcard[] = [
-  ...flashcardsData.jncia.map(card => ({ ...card, exam: 'jncia' })),
-  ...flashcardsData.ccna.map(card => ({ ...card, exam: 'ccna' })),
-  ...flashcardsData.security.map(card => ({ ...card, exam: 'security' })),
-  ...flashcardsData.sc205.map(card => ({ ...card, exam: 'sc205' }))
 ];
 
 // Study topics with detailed descriptions
@@ -589,7 +505,6 @@ const studyTopics: StudyTopicsData = {
       topics: [
         'Static routing',
         'OSPF fundamentals',
-        'EIGRP fundamentals',
         'Path selection and route tables',
         'IPv4 and IPv6 routing differences'
       ]
@@ -674,12 +589,12 @@ const studyTopics: StudyTopicsData = {
       ]
     }
   ],
-  sc205: [
+  sc200: [
     {
       title: 'Identity and Access Management',
-      description: 'Microsoft Azure authentication and authorization services, including Azure AD and conditional access.',
+      description: 'Microsoft authentication and authorization services, including Microsoft Entra ID and Conditional Access.',
       topics: [
-        'Azure Active Directory',
+        'Microsoft Entra ID',
         'Conditional Access policies',
         'Multi-factor authentication',
         'Identity Protection',
@@ -701,8 +616,8 @@ const studyTopics: StudyTopicsData = {
       title: 'Security Operations',
       description: 'Tools and services for monitoring, assessing, and maintaining security posture in Azure.',
       topics: [
-        'Azure Security Center',
-        'Azure Sentinel',
+        'Microsoft Defender for Cloud',
+        'Microsoft Sentinel',
         'Security alerts and incidents',
         'Azure Monitor',
         'Log Analytics'
@@ -715,7 +630,7 @@ const studyTopics: StudyTopicsData = {
         'Azure Key Vault',
         'Storage service encryption',
         'SQL data security',
-        'Azure Information Protection',
+        'Microsoft Purview Information Protection',
         'Application security in Azure'
       ]
     },
@@ -724,10 +639,10 @@ const studyTopics: StudyTopicsData = {
       description: 'Implementing governance and ensuring compliance in Azure environments.',
       topics: [
         'Azure Policy',
-        'Azure Blueprints',
+        'Microsoft Cloud Security Benchmark',
         'Resource Locks',
         'Compliance in Azure',
-        'Azure Security Center compliance'
+        'Microsoft Cloud Security Benchmark'
       ]
     }
   ]
@@ -1121,10 +1036,10 @@ const PracticeExams: React.FC = () => {
                   </Box>
                   <Box>
                     <Typography variant="body2" color="text.secondary">
-                      Passing Score:
+                      Session:
                     </Typography>
                     <Typography variant="body2" fontWeight="500">
-                      {exam.passingScore}%
+                      {exam.isFullLength ? 'Full-length practice' : 'Custom practice session'}
                     </Typography>
                   </Box>
                 </Box>
@@ -1171,7 +1086,7 @@ const PracticeExams: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Typography sx={{ textAlign: 'center', mb: 2 }}>
-            Are you ready to begin the practice exam? You will have {exams.find(e => e.id === selectedExam)?.duration} minutes to complete it.
+            Are you ready to begin this practice session? You will have {exams.find(e => e.id === selectedExam)?.duration} minutes to complete {exams.find(e => e.id === selectedExam)?.totalQuestions} questions.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'center', gap: 2 }}>
@@ -1201,35 +1116,64 @@ const PracticeExams: React.FC = () => {
 const Exam: React.FC = () => {
   const { examId } = useParams<{ examId: string }>();
   const navigate = useNavigate();
+  const selectedCertification = certificationData.find((item) => item.id === examId);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [answers, setAnswers] = useState<string[]>([]);
   const [score, setScore] = useState(0);
   const [showScore, setShowScore] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(5400); // 90 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(5400);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const timeLimitSeconds = (selectedCertification?.examDurationMinutes || 90) * 60;
 
   const handleFinish = useCallback(() => {
-    const finalScore = answers.reduce((acc, answer, index) => {
-      return answer === questions[index].correctAnswer ? acc + 1 : acc;
-    }, 0);
+    if (!selectedCertification || questions.length === 0) return;
+    const attemptQuestions = questions.map((question, index) => ({
+      ...question,
+      userAnswer: answers[index] || null,
+    }));
+    const finalScore = attemptQuestions.reduce(
+      (correct, question) => correct + Number(question.userAnswer === question.correctAnswer),
+      0,
+    );
+    const domainBreakdown = attemptQuestions.reduce<ExamAttempt['domainBreakdown']>((breakdown, question) => {
+      const current = breakdown[question.domain] || { total: 0, correct: 0 };
+      breakdown[question.domain] = {
+        total: current.total + 1,
+        correct: current.correct + Number(question.userAnswer === question.correctAnswer),
+      };
+      return breakdown;
+    }, {});
+    const attempt: ExamAttempt = {
+      certification: selectedCertification.id,
+      completedAt: new Date().toISOString(),
+      totalQuestions: attemptQuestions.length,
+      correctAnswers: finalScore,
+      scorePercent: Math.round((finalScore / attemptQuestions.length) * 100),
+      timeTakenSeconds: Math.max(0, timeLimitSeconds - timeLeft),
+      domainBreakdown,
+      questions: attemptQuestions,
+    };
+    saveExamAttempt(attempt);
     setScore(finalScore);
     setShowScore(true);
-  }, [answers, questions]);
+  }, [answers, questions, selectedCertification, timeLimitSeconds, timeLeft]);
 
   useEffect(() => {
-    if (examId && examQuestionsData[examId as keyof typeof examQuestionsData]) {
-      // Get all questions for the exam
-      const allQuestions = examQuestionsData[examId as keyof typeof examQuestionsData];
-      // Randomly select 65 questions
+    if (selectedCertification) {
+      const allQuestions = examQuestionsData[selectedCertification.id];
+      const count = Math.min(selectedCertification.practiceQuestionCount, allQuestions.length);
       const shuffled = [...allQuestions]
         .sort(() => Math.random() - 0.5)
-        .slice(0, 65);
+        .slice(0, count);
       setQuestions(shuffled);
-      setAnswers(new Array(65).fill(''));
+      setAnswers(new Array(shuffled.length).fill(''));
+      setCurrentQuestion(0);
+      setSelectedAnswer(null);
+      setTimeLeft(selectedCertification.examDurationMinutes * 60);
     }
-  }, [examId]);
+  }, [selectedCertification]);
 
   useEffect(() => {
     if (timeLeft > 0 && !showScore) {
@@ -1272,10 +1216,12 @@ const Exam: React.FC = () => {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  if (!selectedCertification) {
+    return <Typography align="center" sx={{ p: 4 }}>Exam not found.</Typography>;
+  }
+
   if (showScore) {
     const percentage = (score / questions.length) * 100;
-    const passed = percentage >= 70;
-
     return (
       <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
         <Typography 
@@ -1299,9 +1245,7 @@ const Exam: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: passed 
-              ? 'linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(16,185,129,0.1) 100%)'
-              : 'linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(220,38,38,0.1) 100%)',
+            background: 'linear-gradient(135deg, rgba(37,99,235,0.1) 0%, rgba(219,39,119,0.1) 100%)',
             borderRadius: 'inherit',
             zIndex: 0,
           }
@@ -1313,14 +1257,14 @@ const Exam: React.FC = () => {
                 gutterBottom 
                 sx={{ fontWeight: 600 }}
               >
-                Your Score: {score} out of {questions.length}
+                Practice score: {score} out of {questions.length}
               </Typography>
               <Typography 
                 variant="h2" 
                 gutterBottom 
                 sx={{ 
                   fontWeight: 700,
-                  color: passed ? 'success.main' : 'error.main',
+                  color: 'primary.main',
                 }}
               >
                 {percentage.toFixed(1)}%
@@ -1328,11 +1272,11 @@ const Exam: React.FC = () => {
               <Typography 
                 variant="h5" 
                 sx={{ 
-                  color: passed ? 'success.main' : 'error.main',
+                  color: 'text.secondary',
                   fontWeight: 600,
                 }}
               >
-                {passed ? 'Passed' : 'Failed'}
+                Practice result
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
@@ -1402,7 +1346,7 @@ const Exam: React.FC = () => {
           WebkitTextFillColor: 'transparent',
         }}
       >
-        {examId?.toUpperCase()} Practice Exam
+        {selectedCertification.name} Practice Session
       </Typography>
 
       <Box sx={{ mb: 4 }}>
@@ -1414,10 +1358,10 @@ const Exam: React.FC = () => {
         >
           Time Remaining: {formatTime(timeLeft)}
         </Typography>
-        <LinearProgress 
-          variant="determinate" 
-          value={(timeLeft / 5400) * 100} 
-          sx={{ 
+        <LinearProgress
+          variant="determinate"
+          value={(timeLeft / timeLimitSeconds) * 100}
+          sx={{
             height: 8,
             borderRadius: 4,
             bgcolor: 'rgba(37,99,235,0.1)',
@@ -1606,61 +1550,120 @@ const Exam: React.FC = () => {
   );
 };
 
-// Flashcards Component
+type Confidence = 'needs-review' | 'mastered';
+const confidenceStorageKey = 'certification-study:flashcard-confidence';
+
+const loadConfidence = (): Record<string, Confidence> => {
+  const stored = window.localStorage.getItem(confidenceStorageKey);
+  if (!stored) return {};
+  const parsed: unknown = JSON.parse(stored);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Saved flashcard confidence has an invalid format.');
+  }
+  const confidence: Record<string, Confidence> = {};
+  Object.entries(parsed).forEach(([id, value]) => {
+    if (value !== 'needs-review' && value !== 'mastered') {
+      throw new Error(`Saved confidence for flashcard ${id} has an invalid value.`);
+    }
+    confidence[id] = value;
+  });
+  return confidence;
+};
+
 const Flashcards: React.FC = () => {
   const [currentCard, setCurrentCard] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [selectedExam, setSelectedExam] = useState<string>('all');
-  const [shuffledCards, setShuffledCards] = useState([...flashcards]);
+  const [selectedCertification, setSelectedCertification] = useState<string>('all');
+  const [selectedDomain, setSelectedDomain] = useState<string>('all');
+  const [studyMissedCardsOnly, setStudyMissedCardsOnly] = useState(false);
+  const [confidence, setConfidence] = useState<Record<string, Confidence>>(loadConfidence);
+  const [shuffledCards, setShuffledCards] = useState(flashcards);
 
-  const filteredCards = selectedExam === 'all' 
-    ? shuffledCards 
-    : shuffledCards.filter(card => card.exam === selectedExam);
+  useEffect(() => {
+    window.localStorage.setItem(confidenceStorageKey, JSON.stringify(confidence));
+  }, [confidence]);
 
-  const handleNext = () => {
-    if (currentCard < filteredCards.length - 1) {
-      setCurrentCard(currentCard + 1);
-      setIsFlipped(false);
-    }
-  };
+  const certificationCards = selectedCertification === 'all'
+    ? shuffledCards
+    : shuffledCards.filter((card) => card.certification === selectedCertification);
+  const availableDomains = [...new Set(certificationCards.map((card) => card.domain))].sort();
+  const filteredCards = certificationCards.filter((card) =>
+    (selectedDomain === 'all' || card.domain === selectedDomain)
+    && (!studyMissedCardsOnly || confidence[card.id] === 'needs-review'),
+  );
+  const activeCard = filteredCards[currentCard];
 
-  const handlePrevious = () => {
-    if (currentCard > 0) {
-      setCurrentCard(currentCard - 1);
-      setIsFlipped(false);
-    }
-  };
+  useEffect(() => {
+    setCurrentCard((index) => Math.min(index, Math.max(filteredCards.length - 1, 0)));
+    setIsFlipped(false);
+  }, [filteredCards.length]);
 
-  const handleFlip = () => {
-    setIsFlipped(!isFlipped);
-  };
-
-  const handleShuffle = () => {
-    const newShuffled = [...filteredCards]
-      .map(value => ({ value, sort: Math.random() }))
-      .sort((a, b) => a.sort - b.sort)
-      .map(({ value }) => value);
-    setShuffledCards(newShuffled);
+  const selectCertification = (value: string) => {
+    setSelectedCertification(value);
+    setSelectedDomain('all');
     setCurrentCard(0);
     setIsFlipped(false);
   };
 
-  const handleExamChange = (exam: string) => {
-    setSelectedExam(exam);
+  const selectDomain = (value: string) => {
+    setSelectedDomain(value);
+    setCurrentCard(0);
+    setIsFlipped(false);
+  };
+
+  const handleNext = () => {
+    setCurrentCard((index) => Math.min(index + 1, filteredCards.length - 1));
+    setIsFlipped(false);
+  };
+
+  const handlePrevious = () => {
+    setCurrentCard((index) => Math.max(index - 1, 0));
+    setIsFlipped(false);
+  };
+
+  const rateCard = useCallback((rating: Confidence) => {
+    if (!activeCard) return;
+    setConfidence((current) => ({ ...current, [activeCard.id]: rating }));
+  }, [activeCard]);
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLElement && event.target.closest('button, a, input, select, textarea')) return;
+      if (event.code === 'Space') {
+        event.preventDefault();
+        setIsFlipped((flipped) => !flipped);
+      } else if (event.key === 'ArrowLeft') {
+        setCurrentCard((index) => Math.max(index - 1, 0));
+        setIsFlipped(false);
+      } else if (event.key === 'ArrowRight') {
+        setCurrentCard((index) => Math.min(index + 1, Math.max(filteredCards.length - 1, 0)));
+        setIsFlipped(false);
+      } else if (event.key === '1') {
+        rateCard('needs-review');
+      } else if (event.key === '2') {
+        rateCard('mastered');
+      }
+    };
+    window.addEventListener('keydown', handleShortcut);
+    return () => window.removeEventListener('keydown', handleShortcut);
+  }, [activeCard, filteredCards.length, rateCard]);
+
+  const shuffleCards = () => {
+    setShuffledCards([...flashcards].sort(() => Math.random() - 0.5));
     setCurrentCard(0);
     setIsFlipped(false);
   };
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
-      <Typography 
-        variant="h3" 
-        component="h1" 
-        gutterBottom 
+    <Box sx={{ maxWidth: 900, mx: 'auto', p: { xs: 1, sm: 3 } }}>
+      <Typography
+        variant="h3"
+        component="h1"
+        gutterBottom
         align="center"
         sx={{
           fontWeight: 700,
-          mb: 4,
+          mb: 2,
           background: 'linear-gradient(135deg, #2563eb 0%, #db2777 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -1668,120 +1671,123 @@ const Flashcards: React.FC = () => {
       >
         Flashcards
       </Typography>
-      <Typography 
-        variant="body1" 
-        paragraph 
-        align="center" 
-        color="text.secondary"
-        sx={{ mb: 4 }}
-      >
-        Review key concepts and terms with interactive flashcards
+      <Typography variant="body1" paragraph align="center" color="text.secondary">
+        Filter by certification and domain. Rate each card to build a focused review queue.
       </Typography>
 
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center', gap: 1 }}>
-        <Button
-          variant={selectedExam === 'all' ? 'contained' : 'outlined'}
-          onClick={() => handleExamChange('all')}
-        >
-          All Exams
-        </Button>
-        <Button
-          variant={selectedExam === 'jncia' ? 'contained' : 'outlined'}
-          onClick={() => handleExamChange('jncia')}
-        >
-          JNCIA
-        </Button>
-        <Button
-          variant={selectedExam === 'ccna' ? 'contained' : 'outlined'}
-          onClick={() => handleExamChange('ccna')}
-        >
-          CCNA
-        </Button>
-        <Button
-          variant={selectedExam === 'security' ? 'contained' : 'outlined'}
-          onClick={() => handleExamChange('security')}
-        >
-          Security+
-        </Button>
-        <Button
-          variant={selectedExam === 'sc205' ? 'contained' : 'outlined'}
-          onClick={() => handleExamChange('sc205')}
-        >
-          SC-205
-        </Button>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6}>
+          <FormControl fullWidth size="small">
+            <InputLabel id="certification-filter-label">Certification</InputLabel>
+            <Select
+              labelId="certification-filter-label"
+              value={selectedCertification}
+              label="Certification"
+              onChange={(event) => selectCertification(event.target.value)}
+            >
+              <MenuItem value="all">All certifications</MenuItem>
+              {certificationData.map((certification) => (
+                <MenuItem key={certification.id} value={certification.id}>{certification.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <FormControl fullWidth size="small">
+            <InputLabel id="domain-filter-label">Domain</InputLabel>
+            <Select
+              labelId="domain-filter-label"
+              value={selectedDomain}
+              label="Domain"
+              onChange={(event) => selectDomain(event.target.value)}
+            >
+              <MenuItem value="all">All domains</MenuItem>
+              {availableDomains.map((domain) => <MenuItem key={domain} value={domain}>{domain}</MenuItem>)}
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+        <FormControlLabel
+          control={(
+            <Switch
+              checked={studyMissedCardsOnly}
+              onChange={(event) => {
+                setStudyMissedCardsOnly(event.target.checked);
+                setCurrentCard(0);
+                setIsFlipped(false);
+              }}
+            />
+          )}
+          label="Study Needs Review only"
+        />
+        <Typography variant="body2" color="text.secondary">
+          Shortcuts: Space flip · ←/→ navigate · 1 Needs Review · 2 Mastered
+        </Typography>
       </Box>
 
-      {filteredCards.length > 0 ? (
-        <Grid container spacing={3}>
+      {activeCard ? (
+        <Grid container spacing={2}>
           <Grid item xs={12}>
-            <Card 
-              sx={{ 
-                minHeight: 200,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                p: 3,
-                cursor: 'pointer',
-                position: 'relative',
-                overflow: 'hidden',
-                '&:hover': {
-                  boxShadow: 6,
-                },
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: 'linear-gradient(135deg, rgba(37,99,235,0.1) 0%, rgba(219,39,119,0.1) 100%)',
-                  zIndex: 0,
-                },
+            <Card
+              role="button"
+              tabIndex={0}
+              aria-label={isFlipped ? 'Flashcard answer. Press Space to show the question.' : 'Flashcard question. Press Space to show the answer.'}
+              onClick={() => setIsFlipped((flipped) => !flipped)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setIsFlipped((flipped) => !flipped);
+                }
               }}
-              onClick={handleFlip}
+              sx={{
+                minHeight: { xs: 240, sm: 300 },
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                p: { xs: 1, sm: 3 },
+                overflowWrap: 'anywhere',
+                background: 'linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(219,39,119,0.08) 100%)',
+              }}
             >
-              <CardContent sx={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-                <Typography variant="h5" component="div" gutterBottom>
-                  {isFlipped ? filteredCards[currentCard].answer : filteredCards[currentCard].question}
+              <CardContent sx={{ textAlign: 'center', width: '100%' }}>
+                <Typography variant="overline">{activeCard.domain}</Typography>
+                <Typography variant="h5" component="div" sx={{ whiteSpace: 'pre-line', overflowWrap: 'anywhere', my: 2 }}>
+                  {isFlipped ? activeCard.answer : activeCard.question}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {isFlipped ? 'Answer' : 'Question'}
-                </Typography>
+                <Typography variant="body2" color="text.secondary">{isFlipped ? 'Answer and explanation' : 'Question · click or press Space to flip'}</Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-              <Button
-                variant="outlined"
-                startIcon={<PrevIcon />}
-                onClick={handlePrevious}
-                disabled={currentCard === 0}
-              >
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+              <Button variant="outlined" startIcon={<PrevIcon />} onClick={handlePrevious} disabled={currentCard === 0}>
                 Previous
               </Button>
-              <Button
-                variant="outlined"
-                startIcon={<ShuffleIcon />}
-                onClick={handleShuffle}
-              >
-                Shuffle
-              </Button>
-              <Button
-                variant="outlined"
-                endIcon={<NextIcon />}
-                onClick={handleNext}
-                disabled={currentCard === filteredCards.length - 1}
-              >
+              <Button variant="outlined" startIcon={<ShuffleIcon />} onClick={shuffleCards}>Shuffle</Button>
+              <Button variant="outlined" endIcon={<NextIcon />} onClick={handleNext} disabled={currentCard >= filteredCards.length - 1}>
                 Next
               </Button>
             </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 2 }}>
+              <Button variant={confidence[activeCard.id] === 'needs-review' ? 'contained' : 'outlined'} color="warning" onClick={() => rateCard('needs-review')}>
+                1 · Needs Review
+              </Button>
+              <Button variant={confidence[activeCard.id] === 'mastered' ? 'contained' : 'outlined'} color="success" onClick={() => rateCard('mastered')}>
+                2 · Mastered
+              </Button>
+              <Chip label={confidence[activeCard.id] === 'mastered' ? 'Mastered' : confidence[activeCard.id] === 'needs-review' ? 'Needs Review' : 'Unrated'} />
+            </Box>
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
+              Card {currentCard + 1} of {filteredCards.length}
+            </Typography>
           </Grid>
         </Grid>
       ) : (
-        <Typography variant="h6" align="center" color="text.secondary">
-          No flashcards available for this exam
+        <Typography variant="h6" align="center" color="text.secondary" sx={{ py: 6 }}>
+          {studyMissedCardsOnly ? 'No cards marked Needs Review match these filters.' : 'No flashcards match these filters.'}
         </Typography>
       )}
     </Box>
@@ -1838,10 +1844,6 @@ const StudyTopics: React.FC = () => {
       'EtherChannel': 'Bundle multiple physical interfaces into a logical link for increased bandwidth and redundancy.',
       'Switch Security': 'Implement port security, DHCP snooping, dynamic ARP inspection, and other switch security features.',
       'OSPF': 'Configure and troubleshoot Open Shortest Path First routing protocol for efficient internal routing.',
-      'EIGRP': 'Implement Enhanced Interior Gateway Routing Protocol for flexible and scalable routing in Cisco environments.',
-      'BGP': 'Introduction to Border Gateway Protocol for internet routing and multi-homed enterprise networks.',
-      'Route Redistribution': 'Learn how to share routes between different routing protocols and routing domains.',
-      
       // Security+ topic descriptions
       'Malware Types': 'Understanding various types of malware including viruses, worms, trojans, ransomware, and their infection vectors.',
       'Attack Vectors': 'Explore common pathways attackers use to breach systems, including social engineering, network-based, and physical attacks.',
@@ -1858,7 +1860,7 @@ const StudyTopics: React.FC = () => {
       'Mobile Security': 'Approaches to securing mobile devices, applications, and data in enterprise environments.',
       'Embedded Systems': 'Security considerations for IoT devices, industrial control systems, and other embedded technologies.',
       
-      // SC-205 topic descriptions
+      // SC-200 topic descriptions
       'Microsoft Defender for Cloud': 'Cloud-native security management service providing protection across Azure, hybrid, and multi-cloud environments.',
       'Microsoft Sentinel': 'Cloud-native SIEM and SOAR solution for intelligent security analytics and threat intelligence across enterprise.',
       'Microsoft Defender for Identity': 'Cloud-based security solution that identifies, detects, and investigates advanced threats against your identity infrastructure.',
@@ -1869,9 +1871,9 @@ const StudyTopics: React.FC = () => {
       'Threat Hunting': 'Proactive search for threats that have evaded existing security solutions using advanced detection techniques.',
       'Security Automation': 'Implementing automated workflows for security alerts triage, investigation, and remediation actions.',
       'Compliance Management': 'Tools and processes to assess, monitor, and maintain compliance with regulatory standards and security policies.',
-      'Azure Active Directory': 'Microsoft\'s cloud-based identity and access management service for secure authentication and authorization.',
+      'Microsoft Entra ID': 'Microsoft\'s cloud identity and access management service for authentication and authorization.',
       'Conditional Access': 'Microsoft\'s policy-based access control that grants or denies access based on identity signals and conditions.',
-      'Privileged Identity Management': 'Service for managing, controlling, and monitoring privileged access to resources in Azure AD and Azure.',
+      'Privileged Identity Management': 'Service for managing, controlling, and monitoring privileged access to Microsoft Entra ID and Azure resources.',
       'Identity Protection': 'Microsoft tool that detects and prevents identity-based risks using machine learning and heuristics.',
       'Access Reviews': 'Process for regular review and certification of user access to ensure least privilege principle is maintained.'
     };
@@ -1932,10 +1934,10 @@ const StudyTopics: React.FC = () => {
           Security+
         </Button>
         <Button
-          variant={selectedExam === 'sc205' ? 'contained' : 'outlined'}
-          onClick={() => setSelectedExam('sc205')}
+          variant={selectedExam === 'sc200' ? 'contained' : 'outlined'}
+          onClick={() => setSelectedExam('sc200')}
         >
-          SC-205
+          SC-200
         </Button>
       </Box>
 
@@ -2031,7 +2033,7 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Router basename="/certification-study-platform">
+      <Router basename={routerBasename || undefined}>
         <Box sx={{ display: 'flex' }}>
           <CssBaseline />
           <AppBar
@@ -2090,6 +2092,7 @@ function App() {
             sx={{
               flexGrow: 1,
               p: 3,
+              minWidth: 0,
               width: { sm: `calc(100% - ${drawerWidth}px)` },
               minHeight: '100vh',
               background: 'linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(219,39,119,0.05) 100%)',

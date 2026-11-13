@@ -14,45 +14,16 @@ import {
   DialogActions,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
+import { certifications } from '../data/certifications';
+import { examQuestions } from '../data/examQuestions';
 
-const exams = [
-  {
-    id: 'jncia',
-    name: 'JNCIA 105',
-    description: 'Juniper Networks Certified Associate - Junos',
-    color: '#84B135',
-    duration: 90,
-    passingScore: 70,
-    totalQuestions: 65,
-  },
-  {
-    id: 'ccna',
-    name: 'CCNA',
-    description: 'Cisco Certified Network Associate',
-    color: '#1BA0D7',
-    duration: 90,
-    passingScore: 70,
-    totalQuestions: 65,
-  },
-  {
-    id: 'security',
-    name: 'CompTIA Security+',
-    description: 'Security+ Certification',
-    color: '#FF0000',
-    duration: 90,
-    passingScore: 70,
-    totalQuestions: 65,
-  },
-  {
-    id: 'sc205',
-    name: 'Microsoft SC-205',
-    description: 'Microsoft Security Operations Analyst',
-    color: '#00A4EF',
-    duration: 90,
-    passingScore: 70,
-    totalQuestions: 65,
-  },
-];
+const exams = certifications.map((certification) => ({
+  ...certification,
+  duration: certification.examDurationMinutes,
+  totalQuestions: Math.min(certification.practiceQuestionCount, examQuestions[certification.id].length),
+  isFullLength: certification.officialQuestionCount !== null
+    && certification.practiceQuestionCount === certification.officialQuestionCount,
+}));
 
 const PracticeExams: React.FC = () => {
   const navigate = useNavigate();
@@ -120,7 +91,7 @@ const PracticeExams: React.FC = () => {
                   Questions: {exam.totalQuestions}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Passing Score: {exam.passingScore}%
+                  Session: {exam.isFullLength ? 'Full-length practice' : 'Custom practice session'}
                 </Typography>
               </CardContent>
               <CardActions>
