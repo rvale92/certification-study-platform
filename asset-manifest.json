@@ -1,12 +1,12 @@
 {
   "files": {
-    "main.js": "/certification-study-platform/static/js/main.fbcc5e5e.js",
+    "main.js": "/certification-study-platform/static/js/main.6bbcb0e8.js",
     "static/js/453.c71216e4.chunk.js": "/certification-study-platform/static/js/453.c71216e4.chunk.js",
     "index.html": "/certification-study-platform/index.html",
-    "main.fbcc5e5e.js.map": "/certification-study-platform/static/js/main.fbcc5e5e.js.map",
+    "main.6bbcb0e8.js.map": "/certification-study-platform/static/js/main.6bbcb0e8.js.map",
     "453.c71216e4.chunk.js.map": "/certification-study-platform/static/js/453.c71216e4.chunk.js.map"
   },
   "entrypoints": [
-    "static/js/main.fbcc5e5e.js"
+    "static/js/main.6bbcb0e8.js"
   ]
 }
