@@ -29,3 +29,13 @@ yarn-error.log*
 .vscode/
 *.swp
 *.swo
+
+# Supabase/tutor secrets stay server-side; examples contain placeholders only.
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+supabase/.temp/
+supabase/.branches/

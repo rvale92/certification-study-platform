@@ -31,6 +31,12 @@ Practice scores are raw question-bank results; they do not represent official sc
 - Create React App (`react-scripts`)
 - GitHub Pages deployment with `gh-pages`
 
+## AI study tutor
+
+Authenticated Supabase/DeepSeek tutor with 10 prompt requests per UTC day for regular accounts and unlimited daily access for the server-configured admin. The floating Tutor drawer supports sign-in, account creation, remaining quota, and graceful rate-limit handling. The API key stays in Edge Function secrets.
+
+See [AI tutor setup, deployment, and verification](./docs/AI-TUTOR.md). Both the hosted backend and the updated GitHub Pages frontend are deployed. External tester email confirmation still requires custom SMTP.
+
 ## Local development
 
 Requirements: Node.js and npm.

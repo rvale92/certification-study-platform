@@ -1,0 +1,6 @@
+project_id = "certification-study-platform"
+
+[functions.study-tutor]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/study-tutor/index.ts"

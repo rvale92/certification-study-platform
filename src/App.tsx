@@ -57,6 +57,7 @@ import { certifications as certificationData } from './data/certifications';
 import { flashcards } from './data/flashcards';
 import { ExamAttempt, saveExamAttempt } from './data/examAttempt';
 import ExamReview from './pages/ExamReview';
+import StudyTutor from './components/tutor/StudyTutor';
 
 const drawerWidth = 240;
 const publicPath = new URL(process.env.PUBLIC_URL, window.location.origin).pathname.replace(/\/+$/, '');
@@ -2110,6 +2111,7 @@ function App() {
               <Route path="/exam-review/:examId" element={<ExamReview />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            <StudyTutor />
           </Box>
         </Box>
       </Router>
