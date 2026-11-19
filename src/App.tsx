@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useParams, Link as RouterLink, Navigate } from 'react-router-dom';
 import {
   AppBar,
@@ -51,6 +51,8 @@ import {
   Hub as HubIcon,
   Build as BuildIcon,
   Person as PersonIcon,
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
 } from '@mui/icons-material';
 import { examQuestions as examQuestionsData, Question } from './data/examQuestions';
 import { certifications as certificationData } from './data/certifications';
@@ -58,6 +60,7 @@ import { flashcards } from './data/flashcards';
 import { ExamAttempt, saveExamAttempt } from './data/examAttempt';
 import ExamReview from './pages/ExamReview';
 import StudyTutor from './components/tutor/StudyTutor';
+import CheatSheets from './pages/CheatSheets';
 
 const drawerWidth = 240;
 const publicPath = new URL(process.env.PUBLIC_URL, window.location.origin).pathname.replace(/\/+$/, '');
@@ -194,6 +197,11 @@ const features = [
     title: 'Study Topics',
     description: 'Explore detailed study materials organized by topic.',
     path: '/study-topics',
+  },
+  {
+    title: 'Cheat Sheets',
+    description: 'Scan core services, compare architecture choices, and review high-yield exam notes.',
+    path: '/cheatsheets',
   },
 ];
 
@@ -2008,6 +2016,29 @@ const StudyTopics: React.FC = () => {
 // Main App Component
 function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [tutorOpenSignal, setTutorOpenSignal] = useState(0);
+  const [colorMode, setColorMode] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = window.localStorage.getItem('certification-study:color-mode');
+      if (saved === 'light' || saved === 'dark') return saved;
+    } catch { /* Private browsing may disable storage; the theme still works. */ }
+    return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem('certification-study:color-mode', colorMode); } catch { /* Non-persistent preference. */ }
+  }, [colorMode]);
+  const activeTheme = useMemo(() => colorMode === 'light' ? theme : createTheme(theme, {
+    palette: {
+      mode: 'dark', primary: { main: '#60a5fa', contrastText: '#0f172a' },
+      background: { default: '#0f172a', paper: '#1e293b' },
+      text: { primary: '#f8fafc', secondary: '#cbd5e1' }, divider: '#475569',
+      action: { active: '#e2e8f0', disabled: 'rgba(255,255,255,0.38)', hover: 'rgba(255,255,255,0.08)', selected: 'rgba(96,165,250,0.16)', disabledBackground: 'rgba(255,255,255,0.12)' },
+    },
+    components: {
+      MuiAppBar: { styleOverrides: { root: { backgroundColor: '#1e293b', color: '#f8fafc' } } },
+      MuiDrawer: { styleOverrides: { paper: { borderRight: '1px solid #475569' } } },
+    },
+  }), [colorMode]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -2026,6 +2057,12 @@ function App() {
         <ListItem button component={RouterLink} to="/flashcards" onClick={handleDrawerToggle}>
           <ListItemText primary="Flashcards" />
         </ListItem>
+        <ListItem button component={RouterLink} to="/cheatsheets" onClick={() => setMobileOpen(false)}>
+          <ListItemText primary="Cheat Sheets" />
+        </ListItem>
+        <ListItem button onClick={() => { setMobileOpen(false); setTutorOpenSignal((current) => current + 1); }}>
+          <ListItemText primary="AI Study Tutor" />
+        </ListItem>
         <ListItem button component={RouterLink} to="/study-topics" onClick={handleDrawerToggle}>
           <ListItemText primary="Study Topics" />
         </ListItem>
@@ -2034,8 +2071,8 @@ function App() {
   );
 
   return (
-    <ThemeProvider theme={theme}>
-      <Router basename={routerBasename || undefined}>
+    <ThemeProvider theme={activeTheme}>
+      <Router basename={routerBasename || undefined} future={{ v7_startTransition: true }}>
         <Box sx={{ display: 'flex' }}>
           <CssBaseline />
           <AppBar
@@ -2055,9 +2092,13 @@ function App() {
               >
                 <MenuIcon />
               </IconButton>
-              <Typography variant="h6" noWrap component="div">
-                JNCIA Study App
+              <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, minWidth: 0, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                Certification Study Platform
               </Typography>
+              <IconButton color="inherit" aria-label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
+                onClick={() => setColorMode((current) => current === 'light' ? 'dark' : 'light')}>
+                {colorMode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
+              </IconButton>
             </Toolbar>
           </AppBar>
           <Box
@@ -2106,12 +2147,15 @@ function App() {
               <Route path="/practice-exams" element={<PracticeExams />} />
               <Route path="/exam/:examId" element={<Exam />} />
               <Route path="/flashcards" element={<Flashcards />} />
+              <Route path="/cheatsheets" element={<Navigate to="/cheatsheets/aws-saa" replace />} />
+              <Route path="/cheatsheets/aws-saa-c03" element={<Navigate to="/cheatsheets/aws-saa" replace />} />
+              <Route path="/cheatsheets/:trackId" element={<CheatSheets />} />
               <Route path="/study-topics" element={<StudyTopics />} />
               <Route path="/exam-review" element={<ExamReview />} />
               <Route path="/exam-review/:examId" element={<ExamReview />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-            <StudyTutor />
+            <StudyTutor openSignal={tutorOpenSignal} />
           </Box>
         </Box>
       </Router>

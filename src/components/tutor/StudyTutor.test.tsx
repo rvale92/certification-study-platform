@@ -46,12 +46,13 @@ test('unsubscribes on unmount', async () => {
 
 async function ask(prompt = 'Explain routing') {
   fireEvent.change(screen.getByLabelText('Your question'), { target: { value: prompt } });
-  await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Send question' })); });
+  fireEvent.click(screen.getByRole('button', { name: 'Send question' }));
+  await waitFor(() => expect(sendPrompt).toHaveBeenCalled());
 }
 test('sends prompts with bounded history, renders safe text, updates server quota', async () => {
   await openAuthenticated(); await ask();
   expect(await screen.findByText('<img src=x onerror=alert(1)>')).toBeInTheDocument();
-  expect(document.querySelector('img')).toBeNull();
+  expect(screen.queryByRole('img', { hidden: true })).not.toBeInTheDocument();
   expect(screen.getByText(/7 of 10 prompts remaining/)).toBeInTheDocument();
   expect(sendPrompt).toHaveBeenCalledWith('token-a', 'Explain routing', [], expect.any(AbortSignal));
 });
@@ -73,7 +74,7 @@ test('refreshes usage after a failed reserved request and permits explicit retry
   expect(await screen.findByText('Upstream failed')).toBeInTheDocument();
   await screen.findByText(/7 of 10 prompts remaining/);
   expect(sendPrompt).toHaveBeenCalledTimes(1);
-  await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Retry question' })); });
+  fireEvent.click(screen.getByRole('button', { name: 'Retry question' }));
   await waitFor(() => expect(sendPrompt).toHaveBeenCalledTimes(2));
 });
 test('429 displays reset time, refreshes GET usage, and disables sending', async () => {
@@ -123,7 +124,8 @@ test('invited authenticated users can set a password for later sign-in', async (
   await openAuthenticated();
   fireEvent.click(screen.getByRole('button', { name: 'Set sign-in password' }));
   fireEvent.change(screen.getByLabelText(/New sign-in password/), { target: { value: 'a-long-new-password-123' } });
-  await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save password' })); });
+  fireEvent.click(screen.getByRole('button', { name: 'Save password' }));
+  await waitFor(() => expect((auth as any).updateUser).toHaveBeenCalled());
   expect((auth as any).updateUser).toHaveBeenCalledWith({ password: 'a-long-new-password-123' });
   expect(await screen.findByText('Password saved. You can sign in with email and password next time.')).toBeInTheDocument();
 });
@@ -134,5 +136,12 @@ test('usage failures expose a read-only retry and do not consume prompts', async
   await open(); await screen.findByText('Offline');
   fireEvent.click(screen.getByRole('button', { name: 'Refresh usage' }));
   await screen.findByText(/8 of 10 prompts remaining/);
+  expect(sendPrompt).not.toHaveBeenCalled();
+});
+
+test('opens from a navigation request without changing authentication state', async () => {
+  const view = render(<StudyTutor openSignal={0} />);
+  view.rerender(<StudyTutor openSignal={1} />);
+  expect(await screen.findByRole('heading', { name: 'Study tutor' })).toBeInTheDocument();
   expect(sendPrompt).not.toHaveBeenCalled();
 });

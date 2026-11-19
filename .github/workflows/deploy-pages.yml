@@ -1,0 +1,78 @@
+name: Verify and deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      REACT_APP_SUPABASE_URL: ${{ vars.REACT_APP_SUPABASE_URL }}
+      REACT_APP_SUPABASE_ANON_KEY: ${{ vars.REACT_APP_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Verify public tutor configuration is present
+        run: test -n "$REACT_APP_SUPABASE_URL" && test -n "$REACT_APP_SUPABASE_ANON_KEY"
+      - name: Unit and component tests
+        run: CI=true npm test -- --watchAll=false --runInBand
+      - name: TypeScript
+        run: npx tsc --noEmit
+      - name: Lint feature and integration files
+        run: npx eslint src/pages/CheatSheets.tsx src/pages/CheatSheets.test.tsx src/data/cheatsheets src/App.tsx src/App.test.tsx src/components/tutor/StudyTutor.tsx src/components/tutor/StudyTutor.test.tsx src/routing.test.ts --max-warnings=0
+      - name: Production build
+        run: npm run build
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: build
+
+  publish:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Download this run's verified static bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download "$GITHUB_RUN_ID" --name github-pages --dir "$RUNNER_TEMP/pages-artifact"
+          mkdir -p "$RUNNER_TEMP/pages-bundle"
+          tar -xf "$RUNNER_TEMP/pages-artifact/artifact.tar" -C "$RUNNER_TEMP/pages-bundle"
+      - name: Publish generated files to gh-pages without force-pushing
+        run: |
+          git fetch origin gh-pages
+          git worktree add --detach "$RUNNER_TEMP/gh-pages-publish" FETCH_HEAD
+          rsync -a --delete --exclude=.git --exclude=CNAME "$RUNNER_TEMP/pages-bundle/" "$RUNNER_TEMP/gh-pages-publish/"
+          touch "$RUNNER_TEMP/gh-pages-publish/.nojekyll"
+          git -C "$RUNNER_TEMP/gh-pages-publish" add -A
+          if ! git -C "$RUNNER_TEMP/gh-pages-publish" diff --cached --quiet; then
+            git -C "$RUNNER_TEMP/gh-pages-publish" -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "deploy: verified bundle for $GITHUB_SHA"
+            git -C "$RUNNER_TEMP/gh-pages-publish" push origin HEAD:gh-pages
+          fi
+      - name: Explicitly request the branch-based Pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"

@@ -29,6 +29,17 @@
       href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
     />
     <title>Certification Study Platform</title>
+    <script id="github-pages-restore">
+      // Restore the URL encoded by public/404.html before BrowserRouter starts.
+      (function () {
+        var location = window.location;
+        if (location.search.indexOf('?/') !== 0) return;
+        var pieces = location.search.slice(1).split('&');
+        var path = pieces.shift().replace(/~and~/g, '&');
+        var query = pieces.join('&').replace(/~and~/g, '&');
+        window.history.replaceState(null, '', location.pathname.replace(/\/$/, '') + path + (query ? '?' + query : '') + location.hash);
+      }());
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

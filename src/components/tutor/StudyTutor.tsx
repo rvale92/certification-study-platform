@@ -5,8 +5,9 @@ import { supabase } from '../../lib/supabase';
 import { boundedHistory, ChatMessage, getUsage, sendPrompt, TutorApiError, TutorUsage } from '../../lib/tutorApi';
 
 interface FailedQuestion { prompt: string; history: ChatMessage[] }
-export default function StudyTutor() {
+export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => { if (openSignal > 0) setOpen(true); }, [openSignal]);
   const [session, setSession] = useState<Session | null>(null);
   const [initializing, setInitializing] = useState(Boolean(supabase));
   const [email, setEmail] = useState('');
