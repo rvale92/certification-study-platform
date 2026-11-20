@@ -1,11 +1,15 @@
 import { certifications } from '../certifications';
 import { awsSaaCheatSheet } from './awsSaa';
+import { jnciaCheatSheet } from './jncia';
+import { ccnaCheatSheet } from './ccna';
 import type { CheatSheetModule, CheatSheetTrack } from './types';
 
 export * from './types';
 
 export const cheatSheetModules: Readonly<Record<string, CheatSheetModule>> = {
   'aws-saa': awsSaaCheatSheet,
+  jncia: jnciaCheatSheet,
+  ccna: ccnaCheatSheet,
 };
 
 export const cheatSheetTracks: CheatSheetTrack[] = certifications.map((certification) => {

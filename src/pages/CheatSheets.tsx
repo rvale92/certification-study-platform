@@ -7,7 +7,11 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SearchIcon from '@mui/icons-material/Search';
 import { cheatSheetModules, cheatSheetTracks } from '../data/cheatsheets';
-import type { CheatSheetCard, CheatSheetModule } from '../data/cheatsheets';
+import type { CheatSheetCard, CheatSheetDomain, CheatSheetModule } from '../data/cheatsheets';
+
+function domainTitle(domain: CheatSheetDomain) {
+  return domain.weight !== undefined ? `${domain.title} · ${domain.weight}%` : domain.title;
+}
 
 function TopicCard({ card, module, expanded, onToggle }: { card: CheatSheetCard; module: CheatSheetModule; expanded: boolean; onToggle: (expanded: boolean) => void }) {
   return <Accordion expanded={expanded} onChange={(_, value) => onToggle(value)} disableGutters sx={{ mb: 1.5, border: 1, borderColor: 'divider', borderRadius: '12px !important', '&:before': { display: 'none' } }}>
@@ -87,7 +91,7 @@ function CheatSheetReader({ module }: { module: CheatSheetModule }) {
             <Select labelId="cheatsheet-domain-label" value={domainId} label="Domain"
               onChange={(event) => { setDomainId(event.target.value); setSection('services'); setExpanded({}); }}>
               <MenuItem value="all">All domains</MenuItem>
-              {module.domains.map((domain) => <MenuItem key={domain.id} value={domain.id} sx={{ whiteSpace: 'normal', maxWidth: '90vw' }}>{domain.title} · {domain.weight}%</MenuItem>)}
+              {module.domains.map((domain) => <MenuItem key={domain.id} value={domain.id} sx={{ whiteSpace: 'normal', maxWidth: '90vw' }}>{domainTitle(domain)}</MenuItem>)}
             </Select>
           </FormControl>
         </Grid>
@@ -106,7 +110,7 @@ function CheatSheetReader({ module }: { module: CheatSheetModule }) {
     </Paper>
     {count === 0 && <Alert severity="info" sx={{ mb: 3 }}>No cards match your filters.</Alert>}
     {domains.map((domain) => <Box component="section" key={domain.id} sx={{ mb: 4 }} aria-labelledby={`domain-${domain.id}`}>
-      <Typography id={`domain-${domain.id}`} component="h3" variant="h5" sx={{ fontWeight: 700 }}>{domain.title} · {domain.weight}%</Typography>
+      <Typography id={`domain-${domain.id}`} component="h3" variant="h5" sx={{ fontWeight: 700 }}>{domainTitle(domain)}</Typography>
       <Typography color="text.secondary" sx={{ mt: 0.75, mb: 2 }}>{domain.summary}</Typography>
       {cards(domain.cards)}
     </Box>)}

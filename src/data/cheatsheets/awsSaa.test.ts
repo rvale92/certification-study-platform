@@ -9,7 +9,7 @@ describe('AWS SAA-C03 cheat sheet data', () => {
     expect(sheet.examCode).toBe('SAA-C03');
     expect(sheet.lastReviewed).toBe('2026-11-19');
     expect(sheet.domains.map(d => d.weight)).toEqual([30, 26, 24, 20]);
-    expect(sheet.domains.reduce((n, d) => n + d.weight, 0)).toBe(100);
+    expect(sheet.domains.reduce((n: number, d) => n + (d.weight ?? 0), 0)).toBe(100);
     sheet.domains.forEach(d => expect(d.cards.length).toBeGreaterThanOrEqual(6));
     expect(sheet.domains.flatMap(d => d.cards).length).toBeGreaterThanOrEqual(35);
     expect(sheet.decisionCards.length).toBeGreaterThanOrEqual(7);
