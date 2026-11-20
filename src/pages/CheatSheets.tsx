@@ -10,7 +10,8 @@ import { cheatSheetModules, cheatSheetTracks } from '../data/cheatsheets';
 import type { CheatSheetCard, CheatSheetDomain, CheatSheetModule } from '../data/cheatsheets';
 
 function domainTitle(domain: CheatSheetDomain) {
-  return domain.weight !== undefined ? `${domain.title} · ${domain.weight}%` : domain.title;
+  const weight = domain.weightLabel || (domain.weight !== undefined ? `${domain.weight}%` : '');
+  return `${domain.title}${weight ? ` · ${weight}` : ''}`;
 }
 
 function TopicCard({ card, module, expanded, onToggle }: { card: CheatSheetCard; module: CheatSheetModule; expanded: boolean; onToggle: (expanded: boolean) => void }) {

@@ -26,6 +26,7 @@ export interface CheatSheetDomain {
   id: string;
   title: string;
   weight?: number;
+  weightLabel?: string;
   summary: string;
   cards: CheatSheetCard[];
 }
