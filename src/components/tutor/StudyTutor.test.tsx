@@ -26,6 +26,22 @@ beforeEach(() => {
   (getGuestUsage as jest.Mock).mockReturnValue(guestUsage);
   (sendGuestPrompt as jest.Mock).mockResolvedValue({ answer: '(Guest preview) placeholder answer', usage: { ...guestUsage, used: 3, remaining: 7 } });
 });
+function installSpeechMock() {
+  let current: any = null;
+  const synth = { speak: jest.fn((utterance: any) => { current = utterance; }), cancel: jest.fn() };
+  class MockUtterance {
+    text: string;
+    onstart: (() => void) | null = null;
+    onend: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    onboundary: (() => void) | null = null;
+    constructor(text: string) { this.text = text; }
+  }
+  Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: synth });
+  (globalThis as any).SpeechSynthesisUtterance = MockUtterance;
+  return { synth, getCurrent: () => current };
+}
+afterEach(() => { delete (window as any).speechSynthesis; delete (globalThis as any).SpeechSynthesisUtterance; });
 async function open() { render(<StudyTutor/>); fireEvent.click(screen.getByRole('button', { name: /open study tutor/i })); await screen.findByRole('heading', { name: 'Study tutor' }); }
 async function openAuthenticated() { (auth.getSession as jest.Mock).mockResolvedValue({ data: { session }, error: null }); await open(); await screen.findByText(/8 of 10 prompts remaining/i); }
 test('initializes session, subscribes, signs up with confirmation, signs in and logs out', async () => {
@@ -185,4 +201,30 @@ test('signing in transitions from guest to the authenticated quota', async () =>
   expect(await screen.findByText(/8 of 10 prompts remaining/)).toBeInTheDocument();
   expect(auth.signInWithPassword).toHaveBeenCalledWith({ email: 'a@example.com', password: 'secret-password' });
   expect(screen.queryByText(/guest questions remaining/)).not.toBeInTheDocument();
+});
+
+test('toggles the avatar visibility', async () => {
+  await openAuthenticated();
+  expect(screen.getByTestId('tutor-avatar')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Hide avatar' }));
+  expect(screen.queryByTestId('tutor-avatar')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Show avatar' }));
+  expect(screen.getByTestId('tutor-avatar')).toBeInTheDocument();
+});
+test('speaks a tutor answer on demand and stops it', async () => {
+  const speech = installSpeechMock();
+  await openAuthenticated();
+  await ask();
+  fireEvent.click(await screen.findByRole('button', { name: 'Speak' }));
+  expect(speech.synth.speak).toHaveBeenCalled();
+  expect(speech.getCurrent().text).toBe('<img src=x onerror=alert(1)>');
+  act(() => speech.getCurrent().onstart());
+  fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+  expect(speech.synth.cancel).toHaveBeenCalled();
+});
+test('falls back gracefully when speech synthesis is unavailable', async () => {
+  await openAuthenticated();
+  await ask();
+  expect(screen.queryByRole('button', { name: 'Speak' })).not.toBeInTheDocument();
+  expect(screen.getByText(/Voice reading is not supported/)).toBeInTheDocument();
 });

@@ -4,6 +4,8 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import { boundedHistory, ChatMessage, TutorApiError, TutorUsage } from '../../lib/tutorApi';
 import { createTutorClient } from '../../lib/tutorClient';
+import { useSpeechSynthesis } from '../../lib/useSpeechSynthesis';
+import TutorAvatar from './TutorAvatar';
 
 interface FailedQuestion { prompt: string; history: ChatMessage[] }
 export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) {
@@ -25,12 +27,16 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [prompt, setPrompt] = useState('');
   const [failed, setFailed] = useState<FailedQuestion | null>(null);
+  const [showAvatar, setShowAvatar] = useState(true);
+  const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const generation = useRef(0);
   // A GET started before a completed prompt must not roll its quota backward.
   const quotaVersion = useRef(0);
   const account = useRef<string | null>(null);
   const requests = useRef(new Set<AbortController>());
   const sendingLock = useRef(false);
+  const { supported: speechSupported, speaking, speak, stop } = useSpeechSynthesis();
+  const stopSpeaking = useCallback(() => { stop(); setSpeakingIndex(null); }, [stop]);
   const client = useMemo(() => createTutorClient(session?.access_token ?? null), [session?.access_token]);
   const invalidate = useCallback(() => {
     generation.current++;
@@ -40,12 +46,13 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
   const applySession = useCallback((next: Session | null) => {
     invalidate();
     if (account.current !== (next?.user.id ?? null) || !next) {
+      stopSpeaking();
       setMessages([]); setPrompt(''); setFailed(null); setPassword(''); setNewPassword(''); setShowPasswordForm(false); setShowAuthForm(false);
     }
     account.current = next?.user.id ?? null;
     setSession(next ? { ...next } : null); setUsage(null); setError(''); setNotice('');
     setInitializing(false); setAuthBusy(false); setSending(false); setChecking(false);
-  }, [invalidate]);
+  }, [invalidate, stopSpeaking]);
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
@@ -132,6 +139,7 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
     if (!usage || (!usage.isAdmin && usage.remaining === 0) || sendingLock.current || checking) return;
     const question = retry?.prompt ?? prompt;
     if (!question.trim() || question.length > 4000) return;
+    stopSpeaking();
     const history = retry?.history ?? boundedHistory(messages);
     const current = generation.current;
     const controller = new AbortController(); requests.current.add(controller);
@@ -157,6 +165,7 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
     }
   };
   const exhausted = usage !== null && !usage.isAdmin && usage.remaining === 0;
+  const avatarState = sending ? 'thinking' : speaking ? 'speaking' : 'idle';
   const loginForm = <Box component="form" onSubmit={e => { e.preventDefault(); void authenticate(false); }}><Stack spacing={2}>
     <TextField label="Email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} />
     <TextField label="Password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} />
@@ -166,7 +175,13 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
   </Stack></Box>;
   const conversation = <>
     <Stack role="log" aria-label="Tutor conversation" aria-live="polite" spacing={2} sx={{ overflowWrap: 'anywhere' }}>
-      {messages.map((message, index) => <Box key={index} sx={{ p: 1.5, borderRadius: 1, bgcolor: message.role === 'user' ? 'action.hover' : 'background.default' }}><Typography variant="subtitle2">{message.role === 'user' ? 'You' : 'Tutor'}</Typography><Typography sx={{ whiteSpace: 'pre-wrap' }}>{message.content}</Typography></Box>)}
+      {messages.map((message, index) => <Box key={index} sx={{ p: 1.5, borderRadius: 1, bgcolor: message.role === 'user' ? 'action.hover' : 'background.default' }}>
+        <Typography variant="subtitle2">{message.role === 'user' ? 'You' : 'Tutor'}</Typography>
+        <Typography sx={{ whiteSpace: 'pre-wrap' }}>{message.content}</Typography>
+        {message.role === 'assistant' && speechSupported && (speakingIndex === index
+          ? <Button size="small" onClick={stopSpeaking}>Stop</Button>
+          : <Button size="small" onClick={() => { speak(message.content, () => setSpeakingIndex(prev => prev === index ? null : prev)); setSpeakingIndex(index); }}>Speak</Button>)}
+      </Box>)}
     </Stack>
     <Box component="form" onSubmit={e => { e.preventDefault(); void submit(); }}><Stack spacing={1}>
       <TextField label="Your question" multiline minRows={3} maxRows={8} value={prompt} onChange={e => setPrompt(e.target.value)} inputProps={{ maxLength: 4000 }} helperText={`${prompt.length}/4000 characters`} disabled={sending} />
@@ -183,6 +198,18 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
         {!supabase ? <Alert severity="info">Study tutor is not configured for this deployment. Your study materials remain available.</Alert> : initializing ? <CircularProgress aria-label="Restoring session"/> : <>
           {error && <Alert severity="error">{error}</Alert>}
           {notice && <Alert severity="success">{notice}</Alert>}
+          {showAvatar ? (
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
+              <TutorAvatar state={avatarState} />
+              <Stack spacing={0.5} sx={{ flexGrow: 1 }}>
+                <Typography variant="subtitle2">{avatarState === 'speaking' ? 'Speaking…' : avatarState === 'thinking' ? 'Thinking…' : 'Ready'}</Typography>
+                <Button size="small" onClick={() => { stopSpeaking(); setShowAvatar(false); }}>Hide avatar</Button>
+              </Stack>
+            </Stack>
+          ) : (
+            <Button size="small" onClick={() => setShowAvatar(true)}>Show avatar</Button>
+          )}
+          {!speechSupported && <Typography variant="caption" color="text.secondary">Voice reading is not supported in this browser.</Typography>}
           {session ? <>
             <Typography variant="body2">{session.user.email}</Typography><Button onClick={() => void logout()}>Sign out</Button>
             <Button onClick={() => setShowPasswordForm(value => !value)}>Set sign-in password</Button>
