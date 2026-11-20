@@ -3,14 +3,17 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import StudyTutor from './StudyTutor';
 import { supabase } from '../../lib/supabase';
 import { getUsage, sendPrompt, TutorApiError } from '../../lib/tutorApi';
+import { getGuestUsage, sendGuestPrompt } from '../../lib/guestTutor';
 
 jest.mock('../../lib/supabase', () => ({ supabase: { auth: { getSession: jest.fn(), onAuthStateChange: jest.fn(), signInWithPassword: jest.fn(), signUp: jest.fn(), signOut: jest.fn() } } }));
 jest.mock('../../lib/tutorApi', () => ({ ...jest.requireActual('../../lib/tutorApi'), getUsage: jest.fn(), sendPrompt: jest.fn() }));
+jest.mock('../../lib/guestTutor', () => ({ ...jest.requireActual('../../lib/guestTutor'), getGuestUsage: jest.fn(), sendGuestPrompt: jest.fn() }));
 const auth = supabase!.auth;
 let listener: (event: string, session: any) => void;
 const unsubscribe = jest.fn();
 const session = { access_token: 'token-a', user: { id: 'a', email: 'a@example.com' } };
 const usage = { isAdmin: false, limit: 10, used: 2, remaining: 8, resetsAt: '2099-01-01T00:00:00Z' };
+const guestUsage = { isAdmin: false, limit: 10, used: 2, remaining: 8, resetsAt: '2099-01-01T00:00:00Z' };
 beforeEach(() => {
   jest.clearAllMocks();
   (auth.getSession as jest.Mock).mockResolvedValue({ data: { session: null }, error: null });
@@ -20,11 +23,14 @@ beforeEach(() => {
   (auth.signOut as jest.Mock).mockResolvedValue({ error: null });
   (getUsage as jest.Mock).mockResolvedValue(usage);
   (sendPrompt as jest.Mock).mockResolvedValue({ answer: '<img src=x onerror=alert(1)>', usage: { ...usage, used: 3, remaining: 7 } });
+  (getGuestUsage as jest.Mock).mockReturnValue(guestUsage);
+  (sendGuestPrompt as jest.Mock).mockResolvedValue({ answer: '(Guest preview) placeholder answer', usage: { ...guestUsage, used: 3, remaining: 7 } });
 });
 async function open() { render(<StudyTutor/>); fireEvent.click(screen.getByRole('button', { name: /open study tutor/i })); await screen.findByRole('heading', { name: 'Study tutor' }); }
 async function openAuthenticated() { (auth.getSession as jest.Mock).mockResolvedValue({ data: { session }, error: null }); await open(); await screen.findByText(/8 of 10 prompts remaining/i); }
 test('initializes session, subscribes, signs up with confirmation, signs in and logs out', async () => {
   await open();
+  fireEvent.click(await screen.findByRole('button', { name: /sign in \/ create account/i }));
   fireEvent.change(await screen.findByLabelText(/^Email/), { target: { value: 'a@example.com' } });
   fireEvent.change(screen.getByLabelText(/^Password/), { target: { value: 'secret-password' } });
   fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
@@ -35,7 +41,7 @@ test('initializes session, subscribes, signs up with confirmation, signs in and 
   expect(auth.signInWithPassword).toHaveBeenCalledWith({ email: 'a@example.com', password: 'secret-password' });
   expect(getUsage).toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
-  await screen.findByLabelText(/^Email/);
+  await screen.findByRole('button', { name: /sign in \/ create account/i });
   expect(auth.signOut).toHaveBeenCalled();
 });
 test('unsubscribes on unmount', async () => {
@@ -144,4 +150,39 @@ test('opens from a navigation request without changing authentication state', as
   view.rerender(<StudyTutor openSignal={1} />);
   expect(await screen.findByRole('heading', { name: 'Study tutor' })).toBeInTheDocument();
   expect(sendPrompt).not.toHaveBeenCalled();
+});
+
+test('guest opens the tutor without a login wall and sees the local allowance', async () => {
+  await open();
+  expect(await screen.findByText(/8 of 10 guest questions remaining today/)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /sign in \/ create account/i })).toBeInTheDocument();
+  expect(screen.queryByLabelText(/^Email/)).not.toBeInTheDocument();
+  expect(sendPrompt).not.toHaveBeenCalled();
+});
+test('guest asks a question via the local stub and the allowance decrements', async () => {
+  await open();
+  await screen.findByText(/8 of 10 guest questions remaining today/);
+  fireEvent.change(screen.getByLabelText('Your question'), { target: { value: 'Explain routing' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Send question' }));
+  expect(await screen.findByText(/placeholder answer/)).toBeInTheDocument();
+  expect(screen.getByText(/7 of 10 guest questions remaining today/)).toBeInTheDocument();
+  expect(sendGuestPrompt).toHaveBeenCalledWith('Explain routing', []);
+  expect(sendPrompt).not.toHaveBeenCalled();
+});
+test('guest who exhausts the allowance sees the account-required prompt and cannot send', async () => {
+  (getGuestUsage as jest.Mock).mockReturnValue({ isAdmin: false, limit: 10, used: 10, remaining: 0, resetsAt: '2099-01-01T00:00:00Z' });
+  await open();
+  expect(await screen.findByText(/Account required to continue/)).toBeInTheDocument();
+  expect(await screen.findByLabelText(/^Email/)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Send question' })).toBeDisabled();
+});
+test('signing in transitions from guest to the authenticated quota', async () => {
+  await open();
+  fireEvent.click(await screen.findByRole('button', { name: /sign in \/ create account/i }));
+  fireEvent.change(await screen.findByLabelText(/^Email/), { target: { value: 'a@example.com' } });
+  fireEvent.change(screen.getByLabelText(/^Password/), { target: { value: 'secret-password' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+  expect(await screen.findByText(/8 of 10 prompts remaining/)).toBeInTheDocument();
+  expect(auth.signInWithPassword).toHaveBeenCalledWith({ email: 'a@example.com', password: 'secret-password' });
+  expect(screen.queryByText(/guest questions remaining/)).not.toBeInTheDocument();
 });

@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Box, Button, CircularProgress, Drawer, Fab, Stack, TextField, Typography } from '@mui/material';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
-import { boundedHistory, ChatMessage, getUsage, sendPrompt, TutorApiError, TutorUsage } from '../../lib/tutorApi';
+import { boundedHistory, ChatMessage, TutorApiError, TutorUsage } from '../../lib/tutorApi';
+import { createTutorClient } from '../../lib/tutorClient';
 
 interface FailedQuestion { prompt: string; history: ChatMessage[] }
 export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) {
@@ -13,6 +14,7 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showAuthForm, setShowAuthForm] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
   const [sending, setSending] = useState(false);
@@ -29,6 +31,7 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
   const account = useRef<string | null>(null);
   const requests = useRef(new Set<AbortController>());
   const sendingLock = useRef(false);
+  const client = useMemo(() => createTutorClient(session?.access_token ?? null), [session?.access_token]);
   const invalidate = useCallback(() => {
     generation.current++;
     requests.current.forEach(controller => controller.abort());
@@ -37,7 +40,7 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
   const applySession = useCallback((next: Session | null) => {
     invalidate();
     if (account.current !== (next?.user.id ?? null) || !next) {
-      setMessages([]); setPrompt(''); setFailed(null); setPassword(''); setNewPassword(''); setShowPasswordForm(false);
+      setMessages([]); setPrompt(''); setFailed(null); setPassword(''); setNewPassword(''); setShowPasswordForm(false); setShowAuthForm(false);
     }
     account.current = next?.user.id ?? null;
     setSession(next ? { ...next } : null); setUsage(null); setError(''); setNotice('');
@@ -59,13 +62,12 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
   }, [applySession, invalidate]);
 
   const refreshUsage = useCallback(async () => {
-    if (!session) return;
     const current = generation.current;
     const version = quotaVersion.current;
     const controller = new AbortController(); requests.current.add(controller);
     setChecking(true);
     try {
-      const value = await getUsage(session.access_token, controller.signal);
+      const value = await client.getUsage(controller.signal);
       if (current === generation.current && version === quotaVersion.current) { setUsage(value); return value; }
     } catch (err) {
       if (current === generation.current && version === quotaVersion.current) {
@@ -76,10 +78,10 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
       requests.current.delete(controller);
       if (current === generation.current) setChecking(false);
     }
-  }, [session]);
-  useEffect(() => { if (open && session) void refreshUsage(); }, [open, session, refreshUsage]);
+  }, [client]);
+  useEffect(() => { if (open && !initializing) void refreshUsage(); }, [open, initializing, session, refreshUsage]);
   useEffect(() => {
-    if (!open || !session || !usage) return;
+    if (!open || !usage) return;
     const remaining = Date.parse(usage.resetsAt) - Date.now();
     if (!Number.isFinite(remaining)) return;
     // A stale server timestamp is retried slowly, never in a tight loop.
@@ -87,7 +89,7 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
     const onVisible = () => { if (document.visibilityState === 'visible' && Date.now() >= Date.parse(usage.resetsAt)) void refreshUsage(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', onVisible); };
-  }, [open, session, usage, refreshUsage]);
+  }, [open, usage, refreshUsage]);
 
   const authenticate = async (signup: boolean) => {
     if (!supabase) return;
@@ -127,7 +129,7 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
     } catch { if (current === generation.current) setError('Sign out failed. Please try again.'); }
   };
   const submit = async (retry?: FailedQuestion) => {
-    if (!session || !usage || (!usage.isAdmin && usage.remaining === 0) || sendingLock.current || checking) return;
+    if (!usage || (!usage.isAdmin && usage.remaining === 0) || sendingLock.current || checking) return;
     const question = retry?.prompt ?? prompt;
     if (!question.trim() || question.length > 4000) return;
     const history = retry?.history ?? boundedHistory(messages);
@@ -136,7 +138,7 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
     sendingLock.current = true; setSending(true); setError(''); setFailed(null); setPrompt('');
     if (!retry) setMessages(previous => [...previous, { role: 'user', content: question }]);
     try {
-      const result = await sendPrompt(session.access_token, question, history, controller.signal);
+      const result = await client.sendPrompt(question, history, controller.signal);
       if (current !== generation.current) return;
       quotaVersion.current++;
       setMessages(previous => [...previous, { role: 'assistant', content: result.answer }]); setUsage(result.usage);
@@ -155,6 +157,24 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
     }
   };
   const exhausted = usage !== null && !usage.isAdmin && usage.remaining === 0;
+  const loginForm = <Box component="form" onSubmit={e => { e.preventDefault(); void authenticate(false); }}><Stack spacing={2}>
+    <TextField label="Email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} />
+    <TextField label="Password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} />
+    <Button type="submit" variant="contained" disabled={authBusy}>Sign in</Button>
+    <Button disabled={authBusy || !email || !password} onClick={() => void authenticate(true)}>Create account</Button>
+    {authBusy && <CircularProgress size={24} aria-label="Authenticating"/>}
+  </Stack></Box>;
+  const conversation = <>
+    <Stack role="log" aria-label="Tutor conversation" aria-live="polite" spacing={2} sx={{ overflowWrap: 'anywhere' }}>
+      {messages.map((message, index) => <Box key={index} sx={{ p: 1.5, borderRadius: 1, bgcolor: message.role === 'user' ? 'action.hover' : 'background.default' }}><Typography variant="subtitle2">{message.role === 'user' ? 'You' : 'Tutor'}</Typography><Typography sx={{ whiteSpace: 'pre-wrap' }}>{message.content}</Typography></Box>)}
+    </Stack>
+    <Box component="form" onSubmit={e => { e.preventDefault(); void submit(); }}><Stack spacing={1}>
+      <TextField label="Your question" multiline minRows={3} maxRows={8} value={prompt} onChange={e => setPrompt(e.target.value)} inputProps={{ maxLength: 4000 }} helperText={`${prompt.length}/4000 characters`} disabled={sending} />
+      <Button type="submit" variant="contained" disabled={sending || checking || !usage || exhausted || !prompt.trim() || prompt.length > 4000}>Send question</Button>
+      {sending && <CircularProgress size={24} aria-label="Tutor is thinking"/>}
+      {failed && <><Typography variant="caption">A failed request may count toward your daily quota. Retrying sends a new request.</Typography><Button disabled={sending || checking || !usage || exhausted} onClick={() => void submit(failed)}>Retry question</Button></>}
+    </Stack></Box>
+  </>;
   return <>
     <Fab color="primary" aria-label="Open study tutor" onClick={() => setOpen(true)} sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1200 }}>Tutor</Fab>
     <Drawer anchor="right" open={open} onClose={() => setOpen(false)} PaperProps={{ role: 'dialog', 'aria-modal': true, 'aria-labelledby': 'study-tutor-title', sx: { width: { xs: '100%', sm: 440 }, maxWidth: '100vw' } }}>
@@ -163,13 +183,7 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
         {!supabase ? <Alert severity="info">Study tutor is not configured for this deployment. Your study materials remain available.</Alert> : initializing ? <CircularProgress aria-label="Restoring session"/> : <>
           {error && <Alert severity="error">{error}</Alert>}
           {notice && <Alert severity="success">{notice}</Alert>}
-          {!session ? <Box component="form" onSubmit={e => { e.preventDefault(); void authenticate(false); }}><Stack spacing={2}>
-            <TextField label="Email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} />
-            <TextField label="Password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} />
-            <Button type="submit" variant="contained" disabled={authBusy}>Sign in</Button>
-            <Button disabled={authBusy || !email || !password} onClick={() => void authenticate(true)}>Create account</Button>
-            {authBusy && <CircularProgress size={24} aria-label="Authenticating"/>}
-          </Stack></Box> : <>
+          {session ? <>
             <Typography variant="body2">{session.user.email}</Typography><Button onClick={() => void logout()}>Sign out</Button>
             <Button onClick={() => setShowPasswordForm(value => !value)}>Set sign-in password</Button>
             {showPasswordForm && <Box component="form" onSubmit={e => { e.preventDefault(); void savePassword(); }}><Stack spacing={1}>
@@ -180,15 +194,17 @@ export default function StudyTutor({ openSignal = 0 }: { openSignal?: number }) 
             {usage && <Box role="status"><Typography>{usage.isAdmin ? 'Admin · Unlimited prompts' : `${usage.remaining} of ${usage.limit} prompts remaining`}</Typography>{!usage.isAdmin && <Typography variant="caption">Resets {new Date(usage.resetsAt).toLocaleString()}</Typography>}</Box>}
             <Button disabled={checking || sending} onClick={() => { setError(''); void refreshUsage(); }}>Refresh usage</Button>
             {exhausted && <Alert severity="info">Daily limit reached. Your quota will refresh automatically at the reset time.</Alert>}
-            <Stack role="log" aria-label="Tutor conversation" aria-live="polite" spacing={2} sx={{ overflowWrap: 'anywhere' }}>
-              {messages.map((message, index) => <Box key={index} sx={{ p: 1.5, borderRadius: 1, bgcolor: message.role === 'user' ? 'action.hover' : 'background.default' }}><Typography variant="subtitle2">{message.role === 'user' ? 'You' : 'Tutor'}</Typography><Typography sx={{ whiteSpace: 'pre-wrap' }}>{message.content}</Typography></Box>)}
+            {conversation}
+          </> : <>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="body2" color="text.secondary">Guest preview</Typography>
+              {!showAuthForm && !exhausted && <Button onClick={() => setShowAuthForm(true)}>Sign in / Create account</Button>}
             </Stack>
-            <Box component="form" onSubmit={e => { e.preventDefault(); void submit(); }}><Stack spacing={1}>
-              <TextField label="Your question" multiline minRows={3} maxRows={8} value={prompt} onChange={e => setPrompt(e.target.value)} inputProps={{ maxLength: 4000 }} helperText={`${prompt.length}/4000 characters`} disabled={sending} />
-              <Button type="submit" variant="contained" disabled={sending || checking || !usage || exhausted || !prompt.trim() || prompt.length > 4000}>Send question</Button>
-              {sending && <CircularProgress size={24} aria-label="Tutor is thinking"/>}
-              {failed && <><Typography variant="caption">A failed request may count toward your daily quota. Retrying sends a new request.</Typography><Button disabled={sending || checking || !usage || exhausted} onClick={() => void submit(failed)}>Retry question</Button></>}
-            </Stack></Box>
+            {(showAuthForm || exhausted) && loginForm}
+            {checking && <CircularProgress size={24} aria-label="Checking usage"/>}
+            {usage && <Box role="status"><Typography>{`${usage.remaining} of ${usage.limit} guest questions remaining today`}</Typography><Typography variant="caption">Guest preview resets {new Date(usage.resetsAt).toLocaleString()}</Typography></Box>}
+            {exhausted && <Alert severity="info">Account required to continue. Sign in or create an account to keep asking questions.</Alert>}
+            {conversation}
           </>}
         </>}
       </Stack>
