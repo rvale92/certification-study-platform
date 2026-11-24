@@ -16,6 +16,7 @@ import {
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import { certifications } from '../data/certifications';
 import { loadExamAttempt, loadMostRecentExamAttempt } from '../data/examAttempt';
+import DomainBreakdown from '../components/DomainBreakdown';
 
 const ExamReview: React.FC = () => {
   const { examId } = useParams<{ examId: string }>();
@@ -87,18 +88,9 @@ const ExamReview: React.FC = () => {
         </Grid>
 
         <Typography variant="h5" gutterBottom>Domain breakdown</Typography>
-        <Grid container spacing={2} sx={{ mb: 4 }}>
-          {Object.entries(attempt.domainBreakdown).map(([domain, result]) => (
-            <Grid item xs={12} sm={6} md={4} key={domain}>
-              <Card>
-                <CardContent>
-                  <Typography variant="subtitle1">{domain}</Typography>
-                  <Typography variant="h5">{result.correct}/{result.total}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+        <Box sx={{ mb: 4 }}>
+          <DomainBreakdown breakdown={attempt.domainBreakdown} />
+        </Box>
 
         <Typography variant="h5" gutterBottom>Question review</Typography>
         <Grid container spacing={2}>

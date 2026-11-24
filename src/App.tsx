@@ -8,7 +8,6 @@ import {
   CardActionArea,
   CardContent,
   CardActions,
-  Chip,
   Container,
   CssBaseline,
   Dialog,
@@ -30,7 +29,6 @@ import {
   Radio,
   RadioGroup,
   Select,
-  Switch,
   ThemeProvider,
   Toolbar,
   Typography,
@@ -43,7 +41,6 @@ import {
   Menu as MenuIcon,
   NavigateBefore as PrevIcon,
   NavigateNext as NextIcon,
-  Shuffle as ShuffleIcon,
   ExpandMore as ExpandMoreIcon,
   Storage as StorageIcon,
   Security as SecurityIcon,
@@ -53,6 +50,8 @@ import {
   Person as PersonIcon,
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
+  Flag as FlagIcon,
+  OutlinedFlag as OutlinedFlagIcon,
 } from '@mui/icons-material';
 import { examQuestions as examQuestionsData, Question } from './data/examQuestions';
 import { certifications as certificationData } from './data/certifications';
@@ -61,6 +60,10 @@ import { ExamAttempt, saveExamAttempt } from './data/examAttempt';
 import ExamReview from './pages/ExamReview';
 import StudyTutor from './components/tutor/StudyTutor';
 import CheatSheets from './pages/CheatSheets';
+import WeakSpots from './pages/WeakSpots';
+import DomainBreakdown from './components/DomainBreakdown';
+import { loadWeakSpots, saveWeakSpots, recordMiss, setFlagged, newSessionId } from './data/weakSpots';
+import { FlashcardSrs, FlashcardRating, loadFlashcardSrs, saveFlashcardSrs, rateFlashcard, orderBySrs } from './data/flashcardSrs';
 
 const drawerWidth = 240;
 const publicPath = new URL(process.env.PUBLIC_URL, window.location.origin).pathname.replace(/\/+$/, '');
@@ -1135,6 +1138,7 @@ const Exam: React.FC = () => {
   const [showScore, setShowScore] = useState(false);
   const [timeLeft, setTimeLeft] = useState(5400);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [flaggedQuestions, setFlaggedQuestions] = useState<Set<string>>(new Set());
   const timeLimitSeconds = (selectedCertification?.examDurationMinutes || 90) * 60;
 
   const handleFinish = useCallback(() => {
@@ -1166,6 +1170,15 @@ const Exam: React.FC = () => {
       questions: attemptQuestions,
     };
     saveExamAttempt(attempt);
+    // Bucket missed questions into the Weak Spots queue (flags persist on toggle).
+    const sessionId = newSessionId();
+    let weakSpots = loadWeakSpots();
+    attemptQuestions.forEach((question) => {
+      if (question.userAnswer !== question.correctAnswer) {
+        weakSpots = recordMiss(weakSpots, selectedCertification.id, question.id, sessionId);
+      }
+    });
+    saveWeakSpots(weakSpots);
     setScore(finalScore);
     setShowScore(true);
   }, [answers, questions, selectedCertification, timeLimitSeconds, timeLeft]);
@@ -1201,6 +1214,17 @@ const Exam: React.FC = () => {
     setAnswers(newAnswers);
   };
 
+  const toggleFlag = () => {
+    if (!selectedCertification) return;
+    const questionId = questions[currentQuestion].id;
+    const wasFlagged = flaggedQuestions.has(questionId);
+    const next = new Set(flaggedQuestions);
+    if (wasFlagged) next.delete(questionId); else next.add(questionId);
+    setFlaggedQuestions(next);
+    const ws = loadWeakSpots();
+    saveWeakSpots(setFlagged(ws, selectedCertification.id, questionId, !wasFlagged));
+  };
+
   const handleNext = () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
@@ -1232,6 +1256,14 @@ const Exam: React.FC = () => {
 
   if (showScore) {
     const percentage = (score / questions.length) * 100;
+    const domainBreakdown = questions.reduce<Record<string, { total: number; correct: number }>>((acc, question, index) => {
+      const current = acc[question.domain] || { total: 0, correct: 0 };
+      acc[question.domain] = {
+        total: current.total + 1,
+        correct: current.correct + Number(answers[index] === question.correctAnswer),
+      };
+      return acc;
+    }, {});
     return (
       <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
         <Typography 
@@ -1288,6 +1320,12 @@ const Exam: React.FC = () => {
               >
                 Practice result
               </Typography>
+            </Box>
+            <Box sx={{ textAlign: 'left', mb: 3 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                Domain breakdown
+              </Typography>
+              <DomainBreakdown breakdown={domainBreakdown} />
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
               <Button 
@@ -1422,16 +1460,25 @@ const Exam: React.FC = () => {
             />
           </Box>
 
-          <Typography 
-            variant="h5" 
-            gutterBottom
-            sx={{ 
-              fontWeight: 600,
-              mb: 3,
-            }}
-          >
-            {questions[currentQuestion].question}
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+            <Typography
+              variant="h5"
+              gutterBottom
+              sx={{
+                fontWeight: 600,
+                mb: 3,
+              }}
+            >
+              {questions[currentQuestion].question}
+            </Typography>
+            <IconButton
+              onClick={toggleFlag}
+              aria-label={flaggedQuestions.has(questions[currentQuestion].id) ? 'Unflag question' : 'Flag question'}
+              sx={{ flexShrink: 0 }}
+            >
+              {flaggedQuestions.has(questions[currentQuestion].id) ? <FlagIcon color="warning" /> : <OutlinedFlagIcon />}
+            </IconButton>
+          </Box>
 
           <FormControl component="fieldset" sx={{ width: '100%' }}>
             <RadioGroup value={selectedAnswer} onChange={handleAnswerSelect}>
@@ -1560,53 +1607,41 @@ const Exam: React.FC = () => {
   );
 };
 
-type Confidence = 'needs-review' | 'mastered';
-const confidenceStorageKey = 'certification-study:flashcard-confidence';
-
-const loadConfidence = (): Record<string, Confidence> => {
-  const stored = window.localStorage.getItem(confidenceStorageKey);
-  if (!stored) return {};
-  const parsed: unknown = JSON.parse(stored);
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('Saved flashcard confidence has an invalid format.');
-  }
-  const confidence: Record<string, Confidence> = {};
-  Object.entries(parsed).forEach(([id, value]) => {
-    if (value !== 'needs-review' && value !== 'mastered') {
-      throw new Error(`Saved confidence for flashcard ${id} has an invalid value.`);
-    }
-    confidence[id] = value;
-  });
-  return confidence;
-};
-
 const Flashcards: React.FC = () => {
+  const [srs, setSrs] = useState<FlashcardSrs>(loadFlashcardSrs);
+  const [deck, setDeck] = useState<string[]>([]);
   const [currentCard, setCurrentCard] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [selectedCertification, setSelectedCertification] = useState<string>('all');
   const [selectedDomain, setSelectedDomain] = useState<string>('all');
-  const [studyMissedCardsOnly, setStudyMissedCardsOnly] = useState(false);
-  const [confidence, setConfidence] = useState<Record<string, Confidence>>(loadConfidence);
-  const [shuffledCards, setShuffledCards] = useState(flashcards);
 
   useEffect(() => {
-    window.localStorage.setItem(confidenceStorageKey, JSON.stringify(confidence));
-  }, [confidence]);
+    saveFlashcardSrs(srs);
+  }, [srs]);
 
   const certificationCards = selectedCertification === 'all'
-    ? shuffledCards
-    : shuffledCards.filter((card) => card.certification === selectedCertification);
+    ? flashcards
+    : flashcards.filter((card) => card.certification === selectedCertification);
   const availableDomains = [...new Set(certificationCards.map((card) => card.domain))].sort();
   const filteredCards = certificationCards.filter((card) =>
-    (selectedDomain === 'all' || card.domain === selectedDomain)
-    && (!studyMissedCardsOnly || confidence[card.id] === 'needs-review'),
+    selectedDomain === 'all' || card.domain === selectedDomain,
   );
-  const activeCard = filteredCards[currentCard];
+
+  // Build the session deck (SRS-ordered) whenever the filter changes.
+  useEffect(() => {
+    setDeck(orderBySrs(filteredCards, srs).map((card) => card.id));
+    setCurrentCard(0);
+    setIsFlipped(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCertification, selectedDomain]);
 
   useEffect(() => {
-    setCurrentCard((index) => Math.min(index, Math.max(filteredCards.length - 1, 0)));
-    setIsFlipped(false);
-  }, [filteredCards.length]);
+    setCurrentCard((index) => Math.min(index, Math.max(deck.length - 1, 0)));
+  }, [deck.length]);
+
+  const activeCard = deck.length > 0 && currentCard < deck.length
+    ? flashcards.find((card) => card.id === deck[currentCard])
+    : undefined;
 
   const selectCertification = (value: string) => {
     setSelectedCertification(value);
@@ -1622,7 +1657,7 @@ const Flashcards: React.FC = () => {
   };
 
   const handleNext = () => {
-    setCurrentCard((index) => Math.min(index + 1, filteredCards.length - 1));
+    setCurrentCard((index) => Math.min(index + 1, Math.max(deck.length - 1, 0)));
     setIsFlipped(false);
   };
 
@@ -1631,10 +1666,20 @@ const Flashcards: React.FC = () => {
     setIsFlipped(false);
   };
 
-  const rateCard = useCallback((rating: Confidence) => {
+  const rateCard = useCallback((rating: FlashcardRating) => {
     if (!activeCard) return;
-    setConfidence((current) => ({ ...current, [activeCard.id]: rating }));
-  }, [activeCard]);
+    setSrs((current) => ({ ...current, [activeCard.id]: rateFlashcard(rating) }));
+    setDeck((currentDeck) => {
+      if (rating === 'again' && currentCard < currentDeck.length - 1) {
+        const next = currentDeck.slice();
+        const [card] = next.splice(currentCard, 1);
+        next.push(card);
+        return next;
+      }
+      return currentDeck.filter((_, index) => index !== currentCard);
+    });
+    setIsFlipped(false);
+  }, [activeCard, currentCard]);
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
@@ -1652,23 +1697,23 @@ const Flashcards: React.FC = () => {
         setCurrentCard((index) => Math.max(index - 1, 0));
         setIsFlipped(false);
       } else if (event.key === 'ArrowRight') {
-        setCurrentCard((index) => Math.min(index + 1, Math.max(filteredCards.length - 1, 0)));
+        setCurrentCard((index) => Math.min(index + 1, Math.max(deck.length - 1, 0)));
         setIsFlipped(false);
       } else if (event.key === '1') {
-        rateCard('needs-review');
+        rateCard('again');
       } else if (event.key === '2') {
-        rateCard('mastered');
+        rateCard('hard');
+      } else if (event.key === '3') {
+        rateCard('good');
+      } else if (event.key === '4') {
+        rateCard('easy');
       }
     };
     window.addEventListener('keydown', handleShortcut);
     return () => window.removeEventListener('keydown', handleShortcut);
-  }, [activeCard, filteredCards.length, rateCard]);
+  }, [activeCard, deck.length, rateCard]);
 
-  const shuffleCards = () => {
-    setShuffledCards([...flashcards].sort(() => Math.random() - 0.5));
-    setCurrentCard(0);
-    setIsFlipped(false);
-  };
+  const currentSrs = activeCard ? srs[activeCard.id] : undefined;
 
   return (
     <Box sx={{ maxWidth: 900, mx: 'auto', p: { xs: 1, sm: 3 } }}>
@@ -1688,7 +1733,7 @@ const Flashcards: React.FC = () => {
         Flashcards
       </Typography>
       <Typography variant="body1" paragraph align="center" color="text.secondary">
-        Filter by certification and domain. Rate each card to build a focused review queue.
+        Due cards come first. Rate each card to schedule its next review.
       </Typography>
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -1724,22 +1769,9 @@ const Flashcards: React.FC = () => {
         </Grid>
       </Grid>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-        <FormControlLabel
-          control={(
-            <Switch
-              checked={studyMissedCardsOnly}
-              onChange={(event) => {
-                setStudyMissedCardsOnly(event.target.checked);
-                setCurrentCard(0);
-                setIsFlipped(false);
-              }}
-            />
-          )}
-          label="Study Needs Review only"
-        />
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
         <Typography variant="body2" color="text.secondary">
-          Shortcuts: Space flip · ←/→ navigate · 1 Needs Review · 2 Mastered
+          Shortcuts: Space flip · ←/→ navigate · 1 Again · 2 Hard · 3 Good · 4 Easy
         </Typography>
       </Box>
 
@@ -1750,16 +1782,16 @@ const Flashcards: React.FC = () => {
               <CardActionArea
                 aria-label={isFlipped ? 'Flashcard answer. Press Space to show the question.' : 'Flashcard question. Press Space to show the answer.'}
                 onClick={() => setIsFlipped((flipped) => !flipped)}
-              sx={{
-                minHeight: { xs: 240, sm: 300 },
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                p: { xs: 1, sm: 3 },
-                overflowWrap: 'anywhere',
-                background: 'linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(219,39,119,0.08) 100%)',
-              }}
+                sx={{
+                  minHeight: { xs: 240, sm: 300 },
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  p: { xs: 1, sm: 3 },
+                  overflowWrap: 'anywhere',
+                  background: 'linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(219,39,119,0.08) 100%)',
+                }}
               >
                 <CardContent sx={{ textAlign: 'center', width: '100%' }}>
                   <Typography variant="overline">{activeCard.domain}</Typography>
@@ -1776,28 +1808,34 @@ const Flashcards: React.FC = () => {
               <Button variant="outlined" startIcon={<PrevIcon />} onClick={handlePrevious} disabled={currentCard === 0}>
                 Previous
               </Button>
-              <Button variant="outlined" startIcon={<ShuffleIcon />} onClick={shuffleCards}>Shuffle</Button>
-              <Button variant="outlined" endIcon={<NextIcon />} onClick={handleNext} disabled={currentCard >= filteredCards.length - 1}>
+              <Button variant="outlined" endIcon={<NextIcon />} onClick={handleNext} disabled={currentCard >= deck.length - 1}>
                 Next
               </Button>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 2 }}>
-              <Button variant={confidence[activeCard.id] === 'needs-review' ? 'contained' : 'outlined'} color="warning" onClick={() => rateCard('needs-review')}>
-                1 · Needs Review
+              <Button variant={currentSrs?.rating === 'again' ? 'contained' : 'outlined'} color="error" onClick={() => rateCard('again')}>
+                1 · Again
               </Button>
-              <Button variant={confidence[activeCard.id] === 'mastered' ? 'contained' : 'outlined'} color="success" onClick={() => rateCard('mastered')}>
-                2 · Mastered
+              <Button variant={currentSrs?.rating === 'hard' ? 'contained' : 'outlined'} color="warning" onClick={() => rateCard('hard')}>
+                2 · Hard
               </Button>
-              <Chip label={confidence[activeCard.id] === 'mastered' ? 'Mastered' : confidence[activeCard.id] === 'needs-review' ? 'Needs Review' : 'Unrated'} />
+              <Button variant={currentSrs?.rating === 'good' ? 'contained' : 'outlined'} color="primary" onClick={() => rateCard('good')}>
+                3 · Good
+              </Button>
+              <Button variant={currentSrs?.rating === 'easy' ? 'contained' : 'outlined'} color="success" onClick={() => rateCard('easy')}>
+                4 · Easy
+              </Button>
             </Box>
             <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
-              Card {currentCard + 1} of {filteredCards.length}
+              Card {currentCard + 1} of {deck.length} · {currentSrs ? (currentSrs.rating === 'again' ? 'Re-queued' : currentSrs.due <= Date.now() ? 'Due now' : `Due ${new Date(currentSrs.due).toLocaleDateString()}`) : 'New'}
             </Typography>
           </Grid>
         </Grid>
       ) : (
         <Typography variant="h6" align="center" color="text.secondary" sx={{ py: 6 }}>
-          {studyMissedCardsOnly ? 'No cards marked Needs Review match these filters.' : 'No flashcards match these filters.'}
+          {filteredCards.length === 0
+            ? 'No flashcards match these filters.'
+            : 'No cards are due right now — come back later or switch filters.'}
         </Typography>
       )}
     </Box>
@@ -2057,6 +2095,9 @@ function App() {
         <ListItem button component={RouterLink} to="/flashcards" onClick={handleDrawerToggle}>
           <ListItemText primary="Flashcards" />
         </ListItem>
+        <ListItem button component={RouterLink} to="/weak-spots" onClick={handleDrawerToggle}>
+          <ListItemText primary="Weak Spots" />
+        </ListItem>
         <ListItem button component={RouterLink} to="/cheatsheets" onClick={() => setMobileOpen(false)}>
           <ListItemText primary="Cheat Sheets" />
         </ListItem>
@@ -2147,6 +2188,8 @@ function App() {
               <Route path="/practice-exams" element={<PracticeExams />} />
               <Route path="/exam/:examId" element={<Exam />} />
               <Route path="/flashcards" element={<Flashcards />} />
+              <Route path="/weak-spots" element={<WeakSpots />} />
+              <Route path="/weak-spots/:certId" element={<WeakSpots />} />
               <Route path="/cheatsheets" element={<Navigate to="/cheatsheets/aws-saa" replace />} />
               <Route path="/cheatsheets/aws-saa-c03" element={<Navigate to="/cheatsheets/aws-saa" replace />} />
               <Route path="/cheatsheets/:trackId" element={<CheatSheets />} />
