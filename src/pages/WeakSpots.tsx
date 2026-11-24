@@ -35,6 +35,7 @@ import {
   setFlagged,
   newSessionId,
   getActiveWeakSpots,
+  filterWeakSpots,
   weakSpotKey,
 } from '../data/weakSpots';
 
@@ -61,7 +62,12 @@ const WeakSpots: React.FC = () => {
     saveWeakSpots(next);
   };
 
-  const allActive = useMemo(() => getActiveWeakSpots(weakSpots), [weakSpots]);
+  const validWeakSpots = useMemo(
+    () => filterWeakSpots(weakSpots, (track, questionId) =>
+      examQuestions[track]?.some((q) => q.id === questionId) ?? false),
+    [weakSpots],
+  );
+  const allActive = useMemo(() => getActiveWeakSpots(validWeakSpots), [validWeakSpots]);
 
   const activeEntries = useMemo(
     () => (trackFilter === 'all' ? allActive : allActive.filter((entry) => entry.track === trackFilter)),
@@ -209,7 +215,9 @@ const WeakSpots: React.FC = () => {
 
         {queue.length === 0 && (
           <Typography variant="body1" color="text.secondary" align="center" sx={{ mt: 4 }}>
-            No weak spots yet. Miss a question or flag one during a practice exam, and it will appear here.
+            {trackFilter !== 'all' && allActive.length > 0
+              ? `No weak spots in this track yet — ${allActive.length} weak spot${allActive.length === 1 ? '' : 's'} across other tracks.`
+              : 'No weak spots yet. Miss a question or flag one during a practice exam, and it will appear here.'}
           </Typography>
         )}
       </Container>

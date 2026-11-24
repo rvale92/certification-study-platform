@@ -59,12 +59,12 @@ export const saveExamAttempt = (attempt: ExamAttempt): void => {
 export const loadExamAttempt = (certification: CertificationId): ExamAttempt | null => {
   const stored = window.localStorage.getItem(storageKey(certification));
   if (!stored) return null;
-
-  const parsed: unknown = JSON.parse(stored);
-  if (!isExamAttempt(parsed, certification)) {
-    throw new Error(`Saved exam attempt for ${certification} has an invalid format.`);
+  try {
+    const parsed: unknown = JSON.parse(stored);
+    return isExamAttempt(parsed, certification) ? parsed : null;
+  } catch {
+    return null;
   }
-  return parsed;
 };
 
 export const loadMostRecentExamAttempt = (certifications: CertificationId[]): ExamAttempt | null => {

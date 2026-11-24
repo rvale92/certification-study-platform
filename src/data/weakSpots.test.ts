@@ -6,6 +6,7 @@ import {
   recordCorrect,
   setFlagged,
   getActiveWeakSpots,
+  filterWeakSpots,
 } from './weakSpots';
 import type { CertificationId } from './examQuestions';
 
@@ -63,5 +64,25 @@ describe('weak-spots queue', () => {
     const ws = recordMiss({}, TRACK, 'jncia-001', 's0');
     saveWeakSpots(ws);
     expect(loadWeakSpots()['jncia:jncia-001']).toEqual(ws['jncia:jncia-001']);
+  });
+
+  it('recovers from corrupted localStorage JSON with an empty queue', () => {
+    window.localStorage.setItem('certification-study:weak-spots', '{not-json');
+    expect(loadWeakSpots()).toEqual({});
+  });
+
+  it('drops invalid entries instead of throwing', () => {
+    window.localStorage.setItem(
+      'certification-study:weak-spots',
+      JSON.stringify({ 'jncia:jncia-001': { track: 'jncia', questionId: 'jncia-001', missed: 'yes' } }),
+    );
+    expect(loadWeakSpots()).toEqual({});
+  });
+
+  it('filters out dangling entries whose question no longer exists', () => {
+    let ws: WeakSpots = recordMiss({}, TRACK, 'jncia-001', 's0');
+    ws = recordMiss(ws, TRACK, 'jncia-999', 's0');
+    const filtered = filterWeakSpots(ws, (_track, questionId) => questionId !== 'jncia-999');
+    expect(Object.keys(filtered)).toEqual(['jncia:jncia-001']);
   });
 });

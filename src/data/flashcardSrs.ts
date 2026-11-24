@@ -61,18 +61,17 @@ const migrateLegacy = (legacy: Record<string, unknown>): FlashcardSrs => {
 const readSrs = (): FlashcardSrs => {
   const stored = window.localStorage.getItem(STORAGE_KEY);
   if (!stored) return {};
-  const parsed: unknown = JSON.parse(stored);
-  if (!isRecord(parsed)) {
-    throw new Error('Saved flashcard scheduling data has an invalid format.');
+  try {
+    const parsed: unknown = JSON.parse(stored);
+    if (!isRecord(parsed)) return {};
+    const result: FlashcardSrs = {};
+    Object.entries(parsed).forEach(([id, value]) => {
+      if (isCardSrsState(value)) result[id] = value;
+    });
+    return result;
+  } catch {
+    return {};
   }
-  const result: FlashcardSrs = {};
-  Object.entries(parsed).forEach(([id, value]) => {
-    if (!isCardSrsState(value)) {
-      throw new Error(`Saved flashcard scheduling for ${id} has an invalid format.`);
-    }
-    result[id] = value;
-  });
-  return result;
 };
 
 export const loadFlashcardSrs = (): FlashcardSrs => {
@@ -82,11 +81,15 @@ export const loadFlashcardSrs = (): FlashcardSrs => {
   }
   const legacyRaw = window.localStorage.getItem(LEGACY_KEY);
   if (!legacyRaw) return srs;
-  const legacy: unknown = JSON.parse(legacyRaw);
-  if (!isRecord(legacy)) return srs;
-  const merged = { ...migrateLegacy(legacy), ...srs };
-  saveFlashcardSrs(merged);
-  return merged;
+  try {
+    const legacy: unknown = JSON.parse(legacyRaw);
+    if (!isRecord(legacy)) return srs;
+    const merged = { ...migrateLegacy(legacy), ...srs };
+    saveFlashcardSrs(merged);
+    return merged;
+  } catch {
+    return srs;
+  }
 };
 
 export const saveFlashcardSrs = (srs: FlashcardSrs): void => {

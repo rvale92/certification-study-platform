@@ -62,4 +62,9 @@ describe('flashcard spaced repetition', () => {
     expect(isDue({ rating: 'again', due: now - 1000, reviewedAt: 0, intervalDays: 0 }, now)).toBe(true);
     expect(isDue({ rating: 'easy', due: now + 1000, reviewedAt: 0, intervalDays: 7 }, now)).toBe(false);
   });
+
+  it('recovers from corrupted SRS JSON with an empty schedule', () => {
+    window.localStorage.setItem('certification-study:flashcard-srs', 'garbage{');
+    expect(loadFlashcardSrs()).toEqual({});
+  });
 });

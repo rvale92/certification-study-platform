@@ -50,18 +50,17 @@ const isWeakSpotEntry = (value: unknown): value is WeakSpotEntry => {
 export const loadWeakSpots = (): WeakSpots => {
   const stored = window.localStorage.getItem(STORAGE_KEY);
   if (!stored) return {};
-  const parsed: unknown = JSON.parse(stored);
-  if (!isRecord(parsed)) {
-    throw new Error('Saved weak-spot queue has an invalid format.');
+  try {
+    const parsed: unknown = JSON.parse(stored);
+    if (!isRecord(parsed)) return {};
+    const result: WeakSpots = {};
+    Object.entries(parsed).forEach(([key, value]) => {
+      if (isWeakSpotEntry(value)) result[key] = value;
+    });
+    return result;
+  } catch {
+    return {};
   }
-  const result: WeakSpots = {};
-  Object.entries(parsed).forEach(([key, value]) => {
-    if (!isWeakSpotEntry(value)) {
-      throw new Error(`Saved weak-spot entry ${key} has an invalid format.`);
-    }
-    result[key] = value;
-  });
-  return result;
 };
 
 export const saveWeakSpots = (weakSpots: WeakSpots): void => {
@@ -164,3 +163,17 @@ export const getActiveWeakSpots = (
   Object.values(weakSpots)
     .filter((entry) => isActiveWeakSpot(entry) && (!track || entry.track === track))
     .sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
+
+/** Drops entries whose question no longer exists in the question banks. */
+export const filterWeakSpots = (
+  weakSpots: WeakSpots,
+  questionExists: (track: CertificationId, questionId: string) => boolean,
+): WeakSpots => {
+  const result: WeakSpots = {};
+  Object.values(weakSpots).forEach((entry) => {
+    if (questionExists(entry.track, entry.questionId)) {
+      result[weakSpotKey(entry.track, entry.questionId)] = entry;
+    }
+  });
+  return result;
+};
